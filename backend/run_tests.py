@@ -31,9 +31,12 @@ def main():
     parser.add_argument("--html", action="store_true", help="Generate HTML test report")
     parser.add_argument("--parallel", action="store_true", help="Run tests in parallel")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    parser.add_argument("--debug", action="store_true", help="Debug mode (show print statements)")
     parser.add_argument("--fast", action="store_true", help="Run only fast tests")
     parser.add_argument("--file", type=str, help="Run specific test file")
+    parser.add_argument("--function", type=str, help="Run specific test function")
     parser.add_argument("--install-deps", action="store_true", help="Install test dependencies first")
+    parser.add_argument("--no-capture", "-s", action="store_true", help="Don't capture output (show print statements)")
     
     args = parser.parse_args()
     
@@ -64,9 +67,19 @@ def main():
             args.file = f"{args.file}.py"
         cmd.append(args.file)
     
+    # Add specific function if requested
+    if args.function:
+        if args.file:
+            cmd[-1] = f"{cmd[-1]}::{args.function}"
+        else:
+            cmd.append(f"-k {args.function}")
+    
     # Add options
     if args.verbose:
         cmd.append("-v")
+    
+    if args.debug or args.no_capture:
+        cmd.append("-s")  # Don't capture output
     
     if args.coverage:
         cmd.extend(["--cov=.", "--cov-report=term-missing"])
@@ -83,16 +96,25 @@ def main():
         cmd.extend(["-m", "not slow"])
     
     # Add default options for better output
-    cmd.extend(["--tb=short", "--durations=10"])
+    if not args.debug and not args.no_capture:
+        cmd.extend(["--tb=short"])
+    else:
+        cmd.extend(["--tb=long"])  # More detailed tracebacks in debug mode
+    
+    cmd.append("--durations=10")
     
     # Run the tests
     description = "Running pytest"
     if args.file:
         description += f" for {args.file}"
+    if args.function:
+        description += f"::{args.function}"
     if args.coverage:
         description += " with coverage"
     if args.parallel:
         description += " in parallel"
+    if args.debug:
+        description += " in debug mode"
     
     success &= run_command(cmd, description)
     

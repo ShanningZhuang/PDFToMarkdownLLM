@@ -36,6 +36,12 @@ tests/
 - **Parameterized tests** for comprehensive coverage
 - **Graceful error handling** for missing dependencies
 
+### ✅ Advanced Debugging
+- **Error capture before skips** - See actual errors that cause test skips
+- **Debug mode** - Show detailed error analysis and print statements
+- **Token limit analysis** - Test different content sizes to find limits
+- **Detailed error diagnostics** - Automatic error classification and suggestions
+
 ### ✅ Easy to Use
 - **Simple test runner** (`run_tests.py`) with multiple options
 - **Clear test output** with timing and coverage
@@ -76,6 +82,63 @@ python run_tests.py --html
 python run_tests.py --verbose
 ```
 
+## Debugging Failed Tests
+
+### 🐛 Debug Mode
+When tests skip due to errors (like token limits), you can see the actual error details:
+
+```bash
+# Run with debug output to see print statements and detailed errors
+python run_tests.py --debug
+
+# Or run specific debug tests
+python run_tests.py --file test_markdown_cleaning --function test_clean_markdown_debug_error --debug
+
+# Show output without capturing (see print statements)
+python run_tests.py -s
+```
+
+### 🔍 Error Analysis Features
+
+The tests now include sophisticated error analysis:
+
+1. **Error Capture Before Skip**: Shows the actual API error before skipping tests
+2. **Debug Tests**: Special tests that provide detailed error analysis
+3. **Token Limit Analysis**: Tests different content sizes to find exact limits
+4. **Error Classification**: Automatically diagnoses common error types
+
+### Example Debug Output
+
+```bash
+$ python run_tests.py --file test_markdown_cleaning --function test_clean_markdown_debug_error --debug
+
+🔍 DEBUG TEST - Markdown Cleaning Analysis:
+Content length: 523 characters
+Estimated tokens (rough): 147
+Content preview: # Test Document...
+
+Response Status: 500
+Response Headers: {'content-type': 'application/json', 'content-length': '145'}
+Response Body: {
+  "detail": "Request to vLLM failed: 400 Client Error: Bad Request for url: http://localhost:8000/v1/chat/completions"
+}
+
+❌ ERROR ANALYSIS:
+Error Type: Internal Server Error
+Error Detail: Request to vLLM failed: 400 Client Error: Bad Request
+🎯 Diagnosis: Model Loading/Availability Issue
+Suggested Fix: Check vLLM service status and model configuration
+```
+
+### 🎯 Common Error Types and Solutions
+
+The debug tests automatically classify errors and suggest fixes:
+
+- **Token/Context Length Issues**: Reduce content size or increase model context
+- **Model Loading/Availability**: Check vLLM service status and configuration
+- **GPU/Memory Issues**: Check GPU memory or switch to CPU mode
+- **Unknown Errors**: Check vLLM service logs for detailed information
+
 ## Test Categories
 
 ### 🏥 Health Tests (`test_health.py`)
@@ -91,8 +154,9 @@ python run_tests.py --verbose
 
 ### 🧹 Markdown Cleaning Tests (`test_markdown_cleaning.py`)
 - Content cleaning functionality
-- Token limit handling
-- Error scenarios
+- **Debug error analysis** - Shows detailed error information
+- **Token limit analysis** - Tests different content sizes
+- **Error capture** - Shows actual errors before skipping
 - Input validation
 
 ### ⚙️ vLLM Management Tests (`test_vllm_management.py`)
@@ -152,6 +216,12 @@ python run_tests.py --file test_health --verbose
 
 # Run only fast tests in parallel
 python run_tests.py --fast --parallel
+
+# Debug mode with error details
+python run_tests.py --debug
+
+# Run specific function with debug output
+python run_tests.py --file test_markdown_cleaning --function test_clean_markdown_debug_error --debug
 ```
 
 ### Available Options
@@ -159,12 +229,42 @@ python run_tests.py --fast --parallel
 - `--html`: Generate HTML test report
 - `--parallel`: Run tests in parallel
 - `--verbose`: Verbose output
+- `--debug`: Debug mode (show print statements and detailed errors)
 - `--fast`: Skip slow tests
 - `--file`: Run specific test file
+- `--function`: Run specific test function
 - `--install-deps`: Install test dependencies
+- `--no-capture` / `-s`: Don't capture output (show print statements)
+
+## Debugging Workflow
+
+### 1. Identify Failing Tests
+```bash
+# Run tests to see which ones skip or fail
+python run_tests.py --verbose
+```
+
+### 2. Get Detailed Error Information
+```bash
+# Run the debug test to see detailed error analysis
+python run_tests.py --file test_markdown_cleaning --function test_clean_markdown_debug_error --debug
+```
+
+### 3. Analyze Token Limits
+```bash
+# Run token limit analysis to find the exact breaking point
+python run_tests.py --file test_markdown_cleaning --function test_clean_markdown_token_limit_analysis --debug
+```
+
+### 4. Check Specific Scenarios
+```bash
+# Test small content that should work
+python run_tests.py --file test_markdown_cleaning --function test_clean_markdown_small_content --debug
+```
 
 ## Sample Output
 
+### Regular Test Run
 ```bash
 $ python run_tests.py --verbose
 ========================= test session starts =========================
@@ -178,6 +278,28 @@ tests/test_vllm_management.py::test_vllm_status_after_operations PASSED [ 87%]
 ========================= 22 passed, 6 skipped in 15.23s =========================
 ```
 
+### Debug Mode Output
+```bash
+$ python run_tests.py --file test_markdown_cleaning --debug
+
+🚨 DEBUGGING INFO - Markdown Cleaning Failed:
+Status Code: 500
+Error Detail: Request to vLLM failed: 400 Client Error: Bad Request for url: http://localhost:8000/v1/chat/completions
+Full Response: {
+  "detail": "Request to vLLM failed: 400 Client Error: Bad Request for url: http://localhost:8000/v1/chat/completions"
+}
+Content Length: 523 characters
+Content Preview: # Test Document...
+
+📊 TOKEN LIMIT ANALYSIS:
+Size     Chars    Est. Tokens  Status   Result
+------------------------------------------------------------
+tiny     24       4            200      ✅ Success
+small    134      47           200      ✅ Success  
+medium   659      232          500      ❌ Token limit
+large    2559     919          500      ❌ Token limit
+```
+
 ## Testing Best Practices
 
 ### ✅ What We Improved
@@ -189,6 +311,7 @@ tests/test_vllm_management.py::test_vllm_status_after_operations PASSED [ 87%]
 6. **Error handling** - Graceful handling of missing dependencies
 7. **Performance testing** - Response time validation and benchmarking
 8. **Easy execution** - Simple commands for different testing scenarios
+9. **Advanced debugging** - Detailed error analysis and troubleshooting tools
 
 ### ✅ Key Benefits
 - **Maintainable**: Clear structure and separation of concerns
@@ -197,6 +320,7 @@ tests/test_vllm_management.py::test_vllm_status_after_operations PASSED [ 87%]
 - **Flexible**: Multiple execution options and configurations
 - **Reliable**: Proper async handling and error management
 - **Fast**: Parallel execution and selective test running
+- **Debuggable**: Detailed error information and analysis tools
 
 ## Prerequisites for Full Testing
 
@@ -238,5 +362,6 @@ The old testing approach with multiple methods and messy scripts has been comple
 - **Easier maintenance** with clear structure
 - **Better reporting** with coverage and HTML reports
 - **Simpler execution** with the test runner script
+- **Advanced debugging** with detailed error analysis
 
 This testing approach follows industry best practices and provides a solid foundation for maintaining and extending the test suite. 
