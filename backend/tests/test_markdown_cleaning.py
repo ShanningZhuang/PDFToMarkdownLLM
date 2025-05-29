@@ -18,17 +18,18 @@ async def test_clean_markdown_success(client: httpx.AsyncClient, sample_markdown
     if response.status_code == 200:
         data = response.json()
         
-        assert "markdown_content" in data
+        # Check actual API response format
+        assert "success" in data
+        assert "original_content" in data
+        assert "cleaned_content" in data
         assert "content_length" in data
-        assert "metadata" in data
         
         # Content should be cleaned
-        assert len(data["markdown_content"]) > 0
+        assert data["success"] is True
+        assert data["original_content"] == sample_markdown
+        assert len(data["cleaned_content"]) > 0
         assert data["content_length"] > 0
-        
-        # Check metadata
-        metadata = data["metadata"]
-        assert "processing_time_seconds" in metadata
+        assert data["content_length"] == len(data["cleaned_content"])
     
     elif response.status_code == 500:
         # Capture and display the actual error before skipping
@@ -69,7 +70,12 @@ async def test_clean_markdown_debug_error(client: httpx.AsyncClient, sample_mark
         data = response.json()
         print(f"Response Body: {json.dumps(data, indent=2)}")
         
-        if response.status_code == 500:
+        if response.status_code == 200:
+            print(f"\n✅ SUCCESS - Markdown cleaning worked!")
+            print(f"Original length: {len(data['original_content'])}")
+            print(f"Cleaned length: {data['content_length']}")
+            
+        elif response.status_code == 500:
             error_detail = data.get("detail", "No error detail")
             print(f"\n❌ ERROR ANALYSIS:")
             print(f"Error Type: Internal Server Error")
@@ -102,8 +108,11 @@ async def test_clean_markdown_empty_content(client: httpx.AsyncClient):
     
     response = await client.post("/clean-markdown", json=payload)
     
-    # Should handle empty content gracefully
-    assert response.status_code in [200, 400]
+    # Should handle empty content gracefully with 400 error
+    assert response.status_code == 400
+    data = response.json()
+    assert "detail" in data
+    assert "cannot be empty" in data["detail"]
 
 
 @pytest.mark.asyncio
@@ -116,8 +125,16 @@ async def test_clean_markdown_small_content(client: httpx.AsyncClient):
     
     if response.status_code == 200:
         data = response.json()
-        assert "markdown_content" in data
-        assert len(data["markdown_content"]) > 0
+        assert "success" in data
+        assert "original_content" in data
+        assert "cleaned_content" in data
+        assert "content_length" in data
+        
+        assert data["success"] is True
+        assert data["original_content"] == small_content
+        assert len(data["cleaned_content"]) > 0
+        assert data["content_length"] == len(data["cleaned_content"])
+        
     elif response.status_code == 500:
         # Show the actual error for small content failures
         try:
@@ -127,6 +144,10 @@ async def test_clean_markdown_small_content(client: httpx.AsyncClient):
             pytest.skip(f"vLLM service issue - {error_detail}")
         except json.JSONDecodeError:
             pytest.skip("vLLM service not available - non-JSON response")
+    elif response.status_code == 503:
+        # vLLM service not available
+        data = response.json()
+        pytest.skip(f"vLLM service not available - {data.get('detail', 'Unknown error')}")
 
 
 @pytest.mark.asyncio
@@ -163,6 +184,8 @@ async def test_clean_markdown_token_limit_analysis(client: httpx.AsyncClient):
                     result = f"❌ Error: {error[:20]}..."
             except:
                 result = "❌ Unknown error"
+        elif status == 503:
+            result = "❌ Service unavailable"
         else:
             result = f"❓ HTTP {status}"
             
@@ -192,4 +215,51 @@ async def test_clean_markdown_malformed_json(client: httpx.AsyncClient):
         headers={"Content-Type": "application/json"}
     )
     
-    assert response.status_code == 422 
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_clean_markdown_response_format(client: httpx.AsyncClient):
+    """Test that the response format is exactly as documented."""
+    test_content = "# Test\n\nSimple test content."
+    payload = {"markdown_content": test_content}
+    
+    response = await client.post("/clean-markdown", json=payload)
+    
+    if response.status_code == 200:
+        data = response.json()
+        
+        # Verify exact field names and types
+        required_fields = ["success", "original_content", "cleaned_content", "content_length"]
+        for field in required_fields:
+            assert field in data, f"Missing required field: {field}"
+        
+        # Verify field types
+        assert isinstance(data["success"], bool)
+        assert isinstance(data["original_content"], str)
+        assert isinstance(data["cleaned_content"], str)
+        assert isinstance(data["content_length"], int)
+        
+        # Verify field values
+        assert data["success"] is True
+        assert data["original_content"] == test_content
+        assert data["content_length"] == len(data["cleaned_content"])
+        
+    else:
+        print(f"Response status: {response.status_code}")
+        print(f"Response content: {response.text}")
+        pytest.skip(f"Service unavailable (status {response.status_code})")
+
+
+@pytest.mark.asyncio 
+async def test_clean_markdown_whitespace_content(client: httpx.AsyncClient):
+    """Test cleaning with only whitespace content."""
+    payload = {"markdown_content": "   \n\n   \t   "}
+    
+    response = await client.post("/clean-markdown", json=payload)
+    
+    # Should handle whitespace-only content as empty
+    assert response.status_code == 400
+    data = response.json()
+    assert "detail" in data
+    assert "cannot be empty" in data["detail"] 

@@ -36,7 +36,7 @@ def sample_pdf_path() -> str:
     """Path to a sample PDF file for testing."""
     # Look for PDF files in the parent directory or test data
     test_files = [
-        "../AlexNet.pdf",
+        "../logs/AlexNet.pdf",
         "test_data/sample.pdf",
         "sample.pdf"
     ]
