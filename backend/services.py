@@ -96,19 +96,30 @@ class VLLMService:
             system_prompt = self._get_cleaning_system_prompt()
             user_prompt = f"Please clean and improve this markdown content:\n\n{markdown_content}"
 
+            # Estimate token count and adjust max_tokens if needed
+            estimated_input_tokens = self._estimate_token_count(system_prompt + user_prompt)
+            max_tokens = min(
+                settings.vllm_max_tokens,
+                settings.vllm_max_model_len - estimated_input_tokens - 100  # Leave 100 token buffer
+            )
+            
+            if max_tokens < 500:
+                raise Exception(f"Input too long: estimated {estimated_input_tokens} tokens, "
+                              f"leaving only {max_tokens} tokens for response")
+
             response = self.client.chat.completions.create(
                 model=settings.vllm_model_name,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=settings.vllm_max_tokens,
+                max_tokens=max_tokens,
                 temperature=settings.vllm_temperature,
                 stream=False
             )
             
             cleaned_content = response.choices[0].message.content
-            logger.info("Successfully cleaned markdown content with vLLM")
+            logger.info(f"Successfully cleaned markdown content with vLLM (used {max_tokens} max_tokens)")
             return cleaned_content
             
         except Exception as e:
@@ -131,6 +142,13 @@ Please:
 9. Remove artifacts from PDF conversion
 
 Return only the cleaned markdown content without any additional commentary or explanations."""
+
+    def _estimate_token_count(self, text: str) -> int:
+        """
+        Rough estimation of token count (approximately 4 characters per token)
+        This is a simple approximation - in production you might want to use tiktoken
+        """
+        return len(text) // 4
 
 
 class DocumentProcessingService:

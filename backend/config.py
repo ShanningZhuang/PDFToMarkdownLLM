@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     
     # vLLM Parameters
-    vllm_max_tokens: int = 32768
-    vllm_temperature: float = 0.1
+    vllm_max_tokens: int = 16384
+    vllm_temperature: float = 0.
     vllm_timeout: int = 300  # seconds
     
     # Model Download Configuration
