@@ -47,7 +47,11 @@ class PDFConverterService:
             if not result or not result.text_content:
                 raise Exception("Failed to extract content from PDF")
             
-            markdown_content = result.text_content
+            raw_markdown = result.text_content
+            
+            # Fix encoding issues that MarkItDown might introduce with Chinese PDFs
+            markdown_content = self._fix_encoding_issues(raw_markdown, filename)
+            
             logger.info(f"Successfully converted {filename} to Markdown ({len(markdown_content)} characters)")
             
             return markdown_content
@@ -58,6 +62,57 @@ class PDFConverterService:
                 os.unlink(temp_file_path)
             except OSError:
                 pass
+
+    def _fix_encoding_issues(self, content: str, filename: str) -> str:
+        """
+        Fix potential encoding issues in content extracted from PDF
+        
+        Args:
+            content: Raw content from MarkItDown
+            filename: Original filename for logging
+            
+        Returns:
+            Content with encoding issues fixed
+        """
+        try:
+            # If content is already a proper string, return as-is
+            if isinstance(content, str):
+                # Test if the string can be encoded to UTF-8 without issues
+                content.encode('utf-8')
+                return content
+        except UnicodeEncodeError as e:
+            logger.warning(f"Encoding issue detected in {filename}: {e}")
+            
+        # Handle cases where content might have mixed encodings
+        try:
+            # If content is bytes, try different decoding strategies
+            if isinstance(content, bytes):
+                # Try UTF-8 first
+                try:
+                    return content.decode('utf-8')
+                except UnicodeDecodeError:
+                    # Try with errors='replace' to handle mixed encodings
+                    return content.decode('utf-8', errors='replace')
+            
+            # If content is string but has encoding issues, fix it
+            if isinstance(content, str):
+                # Try to encode/decode to clean up any encoding issues
+                try:
+                    # First try to encode as latin-1 then decode as utf-8 (common PDF issue)
+                    encoded = content.encode('latin-1')
+                    return encoded.decode('utf-8', errors='replace')
+                except (UnicodeEncodeError, UnicodeDecodeError):
+                    # If that fails, just replace problematic characters
+                    cleaned = content.encode('utf-8', errors='replace').decode('utf-8')
+                    logger.warning(f"Fixed encoding issues in {filename} using error replacement")
+                    return cleaned
+                    
+        except Exception as e:
+            logger.error(f"Failed to fix encoding issues in {filename}: {e}")
+            # Last resort: convert to string and replace all problematic characters
+            return str(content).encode('utf-8', errors='replace').decode('utf-8')
+        
+        return content
 
 
 class VLLMService:
@@ -143,6 +198,15 @@ class VLLMService:
             # Use proper Qwen3 system message format
             system_prompt = "Clean and format the provided markdown text. Fix any formatting errors, OCR mistakes, and improve structure. Output only the cleaned markdown without explanations."
             user_prompt = f"Clean this markdown content:\n\n{markdown_content}"
+            
+            # Additional safety: ensure content is properly encoded before sending to vLLM
+            try:
+                markdown_content.encode('utf-8')
+                logger.debug("Markdown content encoding verified as UTF-8 compatible")
+            except UnicodeEncodeError as e:
+                logger.warning(f"Markdown content has encoding issues, applying fix: {e}")
+                markdown_content = self._fix_encoding_issues(markdown_content, "streaming_input")
+                user_prompt = f"Clean this markdown content:\n\n{markdown_content}"
 
             # Estimate token count and adjust max_tokens if needed
             estimated_input_tokens = self._estimate_token_count(system_prompt + user_prompt)
@@ -204,6 +268,11 @@ class VLLMService:
                                 if buffer.strip():
                                     token_count += 1
                                     logger.debug(f"Yielding token {token_count}: '{buffer[:20]}...'")
+                                    # Ensure content is properly encoded as UTF-8 string
+                                    if isinstance(buffer, bytes):
+                                        buffer = buffer.decode('utf-8', errors='replace')
+                                    elif not isinstance(buffer, str):
+                                        buffer = str(buffer)
                                     yield buffer
                                     buffer = ""
                                 continue
@@ -215,6 +284,11 @@ class VLLMService:
                                 # Normal content - yield it
                                 token_count += 1
                                 logger.debug(f"Yielding token {token_count}: '{content[:20]}...'")
+                                # Ensure content is properly encoded as UTF-8 string
+                                if isinstance(content, bytes):
+                                    content = content.decode('utf-8', errors='replace')
+                                elif not isinstance(content, str):
+                                    content = str(content)
                                 yield content
                                 buffer = ""
                                 
@@ -222,6 +296,11 @@ class VLLMService:
                             logger.info(f"Stream finished with reason: {choice.finish_reason}")
                             # Yield any remaining buffer content
                             if buffer.strip() and not thinking_mode:
+                                # Ensure content is properly encoded as UTF-8 string
+                                if isinstance(buffer, bytes):
+                                    buffer = buffer.decode('utf-8', errors='replace')
+                                elif not isinstance(buffer, str):
+                                    buffer = str(buffer)
                                 yield buffer
                             break
                     else:
@@ -247,6 +326,48 @@ class VLLMService:
         This is a simple approximation - in production you might want to use tiktoken
         """
         return len(text) // 4
+
+    def _fix_encoding_issues(self, content: str, filename: str) -> str:
+        """
+        Fix potential encoding issues in content (reused from PDFConverterService)
+        
+        Args:
+            content: Content that may have encoding issues
+            filename: Context name for logging
+            
+        Returns:
+            Content with encoding issues fixed
+        """
+        try:
+            # If content is already a proper string, return as-is
+            if isinstance(content, str):
+                # Test if the string can be encoded to UTF-8 without issues
+                content.encode('utf-8')
+                return content
+        except UnicodeEncodeError as e:
+            logger.warning(f"Encoding issue detected in {filename}: {e}")
+            
+        # Handle cases where content might have mixed encodings
+        try:
+            # If content is string but has encoding issues, fix it
+            if isinstance(content, str):
+                # Try to encode/decode to clean up any encoding issues
+                try:
+                    # First try to encode as latin-1 then decode as utf-8 (common PDF issue)
+                    encoded = content.encode('latin-1')
+                    return encoded.decode('utf-8', errors='replace')
+                except (UnicodeEncodeError, UnicodeDecodeError):
+                    # If that fails, just replace problematic characters
+                    cleaned = content.encode('utf-8', errors='replace').decode('utf-8')
+                    logger.warning(f"Fixed encoding issues in {filename} using error replacement")
+                    return cleaned
+                    
+        except Exception as e:
+            logger.error(f"Failed to fix encoding issues in {filename}: {e}")
+            # Last resort: convert to string and replace all problematic characters
+            return str(content).encode('utf-8', errors='replace').decode('utf-8')
+        
+        return content
 
 
 class DocumentProcessingService:

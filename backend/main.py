@@ -1,10 +1,13 @@
 import logging
 import atexit
+import base64
+import urllib.parse
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
+import json
 
 from config import settings
 from services import document_service
@@ -13,6 +16,23 @@ from vllm_manager import vllm_manager
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.log_level))
 logger = logging.getLogger(__name__)
+
+
+def encode_filename_for_header(filename: str) -> str:
+    """
+    Encode filename for HTTP header (must be latin-1 compatible)
+    
+    For Chinese/Unicode filenames, we use URL encoding which is latin-1 safe
+    """
+    try:
+        # First try: if filename is already latin-1 compatible, use it directly
+        filename.encode('latin-1')
+        return filename
+    except UnicodeEncodeError:
+        # Second approach: URL encode the filename (RFC 3986)
+        # This converts Chinese characters to %XX format which is latin-1 safe
+        encoded = urllib.parse.quote(filename, safe='')
+        return encoded
 
 
 @asynccontextmanager
@@ -317,7 +337,7 @@ async def clean_existing_markdown_stream(request: CleanMarkdownRequest):
     try:
         return StreamingResponse(
             generate_stream(),
-            media_type="text/plain",
+            media_type="text/plain; charset=utf-8",  # Explicitly set UTF-8 charset
             headers={
                 "X-Content-Type": "streaming",
                 "Cache-Control": "no-cache",
@@ -387,26 +407,39 @@ async def upload_pdf_stream(
         
         logger.info(f"PDF converted to markdown, starting streaming cleanup...")
         
-        async def generate_stream():
+        def generate_stream():
             """Generate streaming response with PDF metadata header"""
-            # Send metadata as first chunk (JSON format)
-            metadata = {
-                "filename": file.filename,
-                "file_size_bytes": len(file_content),
-                "raw_content_length": len(raw_markdown)
-            }
-            yield f"data: {metadata}\n\n"
-            
-            # Stream cleaned content
-            async for token in document_service.vllm_service.clean_markdown_content_stream(raw_markdown):
-                yield token
+            try:
+                # Send metadata as first chunk (JSON format) - ensure UTF-8 encoding
+                metadata = {
+                    "filename": file.filename,
+                    "file_size_bytes": len(file_content),
+                    "raw_content_length": len(raw_markdown)
+                }
+                # Ensure proper JSON serialization with UTF-8 support
+                metadata_json = json.dumps(metadata, ensure_ascii=False)
+                yield f"data: {metadata_json}\n\n"
+                
+                # Stream cleaned content using sync generator (consistent with clean_markdown_content_stream)
+                generator = document_service.vllm_service.clean_markdown_content_stream(raw_markdown)
+                for token in generator:  # Use sync iteration like in the working endpoint
+                    # Ensure token is properly encoded as UTF-8 string
+                    if isinstance(token, bytes):
+                        token = token.decode('utf-8', errors='replace')
+                    yield token
+                    
+            except Exception as stream_error:
+                logger.error(f"Error in PDF stream generation: {stream_error}")
+                error_msg = f"\n\n[ERROR: {str(stream_error)}]"
+                yield error_msg
+                raise
         
         return StreamingResponse(
             generate_stream(),
-            media_type="text/plain",
+            media_type="text/plain; charset=utf-8",  # Explicitly set UTF-8 charset
             headers={
                 "X-Content-Type": "streaming",
-                "X-Filename": file.filename,
+                "X-Filename": encode_filename_for_header(file.filename),  # Properly encode filename
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive"
             }
