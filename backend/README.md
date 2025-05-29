@@ -207,6 +207,376 @@ Once the server is running, visit:
 - Swagger UI: `http://localhost:8001/docs`
 - ReDoc: `http://localhost:8001/redoc`
 
+## Backend Architecture
+
+### Overview
+
+The backend is designed as a modular, service-oriented architecture that manages both PDF conversion and LLM processing in a single, cohesive system. Here's how all the components work together:
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Client[Frontend/API Client]
+    end
+    
+    subgraph "FastAPI Application Layer"
+        Main[main.py<br/>FastAPI App]
+        Routes[API Routes<br/>- /upload<br/>- /health<br/>- /vllm/*]
+    end
+    
+    subgraph "Service Layer"
+        DocService[services.py<br/>DocumentProcessingService]
+        PDFService[services.py<br/>PDFConverterService]
+        VLLMService[services.py<br/>VLLMService]
+    end
+    
+    subgraph "Infrastructure Layer"
+        VLLMManager[vllm_manager.py<br/>VLLMManager]
+        Config[config.py<br/>Settings]
+        Utils[utils.py<br/>Utilities]
+    end
+    
+    subgraph "External Dependencies"
+        MarkItDown[MarkItDown<br/>PDF Converter]
+        VLLMProcess[vLLM Process<br/>OpenAI API Server]
+        FileSystem[File System<br/>Temp Files & Models]
+    end
+    
+    Client --> Main
+    Main --> Routes
+    Routes --> DocService
+    DocService --> PDFService
+    DocService --> VLLMService
+    PDFService --> MarkItDown
+    VLLMService --> VLLMProcess
+    Main --> VLLMManager
+    VLLMManager --> VLLMProcess
+    VLLMManager --> FileSystem
+    Config --> Main
+    Config --> VLLMManager
+    Utils --> PDFService
+    
+    style Main fill:#e1f5fe
+    style DocService fill:#f3e5f5
+    style VLLMManager fill:#fff3e0
+    style Config fill:#e8f5e8
+```
+
+### Module Connections and Data Flow
+
+#### 1. **Application Entry Point (`main.py`)**
+
+The main FastAPI application serves as the orchestrator:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Main as main.py
+    participant Config as config.py
+    participant VLLMManager as vllm_manager.py
+    participant DocService as services.py
+    
+    Note over Main: Application Startup
+    Main->>Config: Load settings
+    Main->>VLLMManager: Initialize manager
+    alt VLLM_AUTO_START=true
+        Main->>VLLMManager: start_vllm_service()
+        VLLMManager-->>Main: Service started
+    end
+    
+    Note over Client,DocService: Request Processing
+    Client->>Main: POST /upload (PDF file)
+    Main->>Main: Validate file & size
+    Main->>DocService: process_document()
+    DocService-->>Main: Processing result
+    Main-->>Client: JSON response
+    
+    Note over Main: Application Shutdown
+    Main->>VLLMManager: stop_vllm_service()
+    VLLMManager-->>Main: Service stopped
+```
+
+**Key Responsibilities:**
+- FastAPI application setup and lifecycle management
+- Route definitions and request/response handling
+- Integration with vLLM manager for automatic service management
+- CORS middleware and security configurations
+- Application startup/shutdown event handling
+
+#### 2. **Configuration Management (`config.py`)**
+
+Centralized configuration using Pydantic settings:
+
+```mermaid
+graph LR
+    subgraph "Environment Variables"
+        ENV[Environment<br/>Variables]
+    end
+    
+    subgraph "config.py"
+        Settings[Settings Class<br/>Pydantic BaseSettings]
+        Validation[Type Validation<br/>& Defaults]
+    end
+    
+    subgraph "Application Modules"
+        Main[main.py]
+        VLLMManager[vllm_manager.py]
+        Services[services.py]
+    end
+    
+    ENV --> Settings
+    Settings --> Validation
+    Validation --> Main
+    Validation --> VLLMManager
+    Validation --> Services
+    
+    style Settings fill:#e8f5e8
+```
+
+**Configuration Flow:**
+- Loads environment variables with type validation
+- Provides default values for all settings
+- Shared across all modules via global `settings` instance
+- Supports runtime configuration changes
+
+#### 3. **Service Layer (`services.py`)**
+
+The service layer implements the core business logic with three main services:
+
+```mermaid
+graph TB
+    subgraph "services.py"
+        DocService[DocumentProcessingService<br/>Main Orchestrator]
+        PDFService[PDFConverterService<br/>PDF → Markdown]
+        VLLMService[VLLMService<br/>Content Cleaning]
+    end
+    
+    subgraph "External Tools"
+        MarkItDown[MarkItDown Library]
+        OpenAI[OpenAI Client<br/>→ vLLM Process]
+    end
+    
+    subgraph "Utilities"
+        Utils[utils.py<br/>File Validation]
+        TempFiles[Temporary Files]
+    end
+    
+    DocService --> PDFService
+    DocService --> VLLMService
+    PDFService --> MarkItDown
+    PDFService --> TempFiles
+    PDFService --> Utils
+    VLLMService --> OpenAI
+    
+    style DocService fill:#f3e5f5
+    style PDFService fill:#e3f2fd
+    style VLLMService fill:#fff8e1
+```
+
+**Service Interactions:**
+
+```mermaid
+sequenceDiagram
+    participant Main as main.py
+    participant DocService as DocumentProcessingService
+    participant PDFService as PDFConverterService
+    participant VLLMService as VLLMService
+    participant MarkItDown
+    participant vLLM as vLLM Process
+    
+    Main->>DocService: process_document(file_content, filename, clean_with_llm)
+    
+    DocService->>PDFService: convert_pdf_to_markdown(file_content, filename)
+    PDFService->>PDFService: Create temp file
+    PDFService->>MarkItDown: convert(temp_file_path)
+    MarkItDown-->>PDFService: Markdown content
+    PDFService->>PDFService: Cleanup temp file
+    PDFService-->>DocService: Raw markdown
+    
+    alt clean_with_llm=true
+        DocService->>VLLMService: clean_markdown_content(raw_markdown)
+        VLLMService->>vLLM: OpenAI API call
+        vLLM-->>VLLMService: Cleaned content
+        VLLMService-->>DocService: Cleaned markdown
+    end
+    
+    DocService->>DocService: Prepare response data
+    DocService-->>Main: Complete result
+```
+
+#### 4. **vLLM Management (`vllm_manager.py`)**
+
+Manages the entire lifecycle of the vLLM process:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Initialized: VLLMManager()
+    
+    Initialized --> Starting: start_vllm_service()
+    Starting --> CheckingPort: Port available?
+    CheckingPort --> BuildingCommand: Yes
+    CheckingPort --> Failed: No (Port in use)
+    
+    BuildingCommand --> StartingProcess: subprocess.Popen()
+    StartingProcess --> WaitingReady: Process started
+    WaitingReady --> Running: Health check OK
+    WaitingReady --> Failed: Timeout/Error
+    
+    Running --> Monitoring: Continuous health checks
+    Monitoring --> Running: Healthy
+    Monitoring --> Restarting: Unhealthy
+    
+    Running --> Stopping: stop_vllm_service()
+    Restarting --> Starting: restart_vllm_service()
+    Stopping --> Stopped: SIGTERM/SIGKILL
+    
+    Failed --> [*]
+    Stopped --> [*]
+```
+
+**vLLM Manager Responsibilities:**
+- Process lifecycle management (start/stop/restart)
+- Health monitoring and auto-recovery
+- GPU/CPU detection and optimization
+- Model caching and environment setup
+- Resource monitoring (memory, CPU usage)
+
+#### 5. **Utility Functions (`utils.py`)**
+
+Supporting utilities for common operations:
+
+```mermaid
+graph LR
+    subgraph "utils.py Functions"
+        ValidatePDF[validate_pdf_file<br/>PDF validation]
+        FormatSize[format_file_size<br/>Human readable sizes]
+        SanitizeFilename[sanitize_filename<br/>Security cleanup]
+        TruncateText[truncate_text<br/>Logging helper]
+    end
+    
+    subgraph "Used By"
+        PDFService[PDFConverterService]
+        Main[main.py routes]
+        Logging[Logging system]
+    end
+    
+    ValidatePDF --> PDFService
+    FormatSize --> Main
+    SanitizeFilename --> PDFService
+    TruncateText --> Logging
+    
+    style ValidatePDF fill:#ffebee
+    style FormatSize fill:#e8f5e8
+    style SanitizeFilename fill:#fff3e0
+    style TruncateText fill:#f3e5f5
+```
+
+### Complete Request Flow
+
+Here's how a typical PDF upload request flows through the entire system:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant FastAPI as main.py
+    participant VLLMManager as vllm_manager.py
+    participant DocService as DocumentProcessingService
+    participant PDFService as PDFConverterService
+    participant VLLMService as VLLMService
+    participant Utils as utils.py
+    participant MarkItDown
+    participant vLLM as vLLM Process
+    
+    Client->>FastAPI: POST /upload (PDF file)
+    
+    FastAPI->>FastAPI: Validate file extension
+    FastAPI->>FastAPI: Check file size limits
+    
+    alt vLLM needed and not running
+        FastAPI->>VLLMManager: Check if vLLM running
+        VLLMManager-->>FastAPI: Not running
+        FastAPI->>VLLMManager: start_vllm_service()
+        VLLMManager->>vLLM: Start process
+        vLLM-->>VLLMManager: Process ready
+        VLLMManager-->>FastAPI: Service started
+    end
+    
+    FastAPI->>DocService: process_document(file_content, filename, clean_with_llm)
+    
+    DocService->>PDFService: convert_pdf_to_markdown(file_content, filename)
+    PDFService->>Utils: validate_pdf_file(filename, content)
+    Utils-->>PDFService: Validation result
+    PDFService->>PDFService: Create temporary file
+    PDFService->>MarkItDown: convert(temp_file_path)
+    MarkItDown-->>PDFService: Raw markdown content
+    PDFService->>PDFService: Cleanup temporary file
+    PDFService-->>DocService: Raw markdown
+    
+    alt clean_with_llm=true
+        DocService->>VLLMService: clean_markdown_content(raw_markdown)
+        VLLMService->>vLLM: OpenAI API request
+        vLLM-->>VLLMService: Cleaned content
+        VLLMService-->>DocService: Cleaned markdown
+    end
+    
+    DocService->>DocService: Build response data
+    DocService-->>FastAPI: Complete result
+    FastAPI-->>Client: JSON response
+```
+
+### Error Handling and Recovery
+
+The system implements comprehensive error handling at multiple levels:
+
+```mermaid
+graph TB
+    subgraph "Error Sources"
+        FileError[File Validation Errors]
+        PDFError[PDF Conversion Errors]
+        VLLMError[vLLM Service Errors]
+        SystemError[System Resource Errors]
+    end
+    
+    subgraph "Error Handling Layers"
+        RouteLevel[Route Level<br/>HTTP Status Codes]
+        ServiceLevel[Service Level<br/>Graceful Degradation]
+        ProcessLevel[Process Level<br/>Auto-Recovery]
+    end
+    
+    subgraph "Recovery Actions"
+        Fallback[Fallback to Raw Conversion]
+        Restart[Auto-restart vLLM]
+        Logging[Detailed Error Logging]
+        UserFeedback[User-friendly Messages]
+    end
+    
+    FileError --> RouteLevel
+    PDFError --> ServiceLevel
+    VLLMError --> ProcessLevel
+    SystemError --> ProcessLevel
+    
+    RouteLevel --> UserFeedback
+    ServiceLevel --> Fallback
+    ProcessLevel --> Restart
+    ProcessLevel --> Logging
+    
+    style RouteLevel fill:#ffebee
+    style ServiceLevel fill:#fff3e0
+    style ProcessLevel fill:#e8f5e8
+```
+
+### Key Design Principles
+
+1. **Separation of Concerns**: Each module has a single, well-defined responsibility
+2. **Dependency Injection**: Configuration and services are injected rather than hardcoded
+3. **Graceful Degradation**: System continues to work even if vLLM fails
+4. **Process Isolation**: vLLM runs as a separate process for stability
+5. **Resource Management**: Proper cleanup of temporary files and processes
+6. **Observability**: Comprehensive logging and health monitoring
+7. **Scalability**: Async operations and efficient resource usage
+
+This architecture ensures the backend is maintainable, testable, and production-ready while providing a seamless integration between PDF conversion and LLM processing capabilities.
+
 ## vLLM Integration
 
 ### Automatic Management
