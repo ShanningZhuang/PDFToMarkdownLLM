@@ -12,11 +12,11 @@ class Settings(BaseSettings):
     
     # vLLM Service Configuration
     vllm_base_url: str = "http://localhost:8000"
-    vllm_model_name: str = "mistralai/Mistral-7B-Instruct-v0.3"
+    vllm_model_name: str = "Qwen/Qwen3-8B"
     vllm_auto_start: bool = True  # Auto-start vLLM service
     vllm_startup_timeout: int = 300  # Timeout for vLLM startup (seconds)
     vllm_gpu_memory_utilization: float = 0.8
-    vllm_max_model_len: int = 4096
+    vllm_max_model_len: int = 32768
     
     # File Upload Configuration
     max_file_size_mb: int = 50
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     
     # vLLM Parameters
-    vllm_max_tokens: int = 4096
+    vllm_max_tokens: int = 32768
     vllm_temperature: float = 0.1
     vllm_timeout: int = 300  # seconds
     
