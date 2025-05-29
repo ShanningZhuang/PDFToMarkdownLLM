@@ -12,6 +12,56 @@ A FastAPI-based backend service that converts PDF documents to Markdown format u
 - 🔒 File validation and security
 - 📖 Comprehensive API documentation
 - ⚙️ **vLLM management endpoints** for control and monitoring
+- 🌊 **Token-by-token streaming** for real-time response (like ChatGPT!)
+
+## 🌊 Streaming Support
+
+Experience real-time token-by-token streaming from vLLM, just like ChatGPT! This provides immediate feedback and better user experience for long documents.
+
+### Streaming Endpoints
+
+- **`POST /clean-markdown-stream`** - Stream cleaned markdown token by token
+- **`POST /upload-stream`** - Upload PDF and stream cleaned markdown in real-time
+
+### Benefits of Streaming
+
+- ⚡ **Immediate feedback** - See tokens as they're generated
+- 🎯 **Better UX** - No waiting for complete response
+- 📈 **Progress indication** - Users see processing happening
+- 🔄 **Interactive experience** - Like modern AI chatbots
+
+### Demo
+
+Open `streaming_demo.html` in your browser to see streaming in action:
+
+```bash
+# Start the backend
+python main.py
+
+# Open the demo (make sure backend is running on localhost:8001)
+open streaming_demo.html
+```
+
+### Usage Examples
+
+**Python Streaming Client:**
+```python
+import httpx
+
+async with httpx.AsyncClient() as client:
+    payload = {"markdown_content": "# Test\n\nContent to clean..."}
+    async with client.stream("POST", "/clean-markdown-stream", json=payload) as response:
+        async for chunk in response.aiter_text():
+            print(chunk, end="", flush=True)  # Real-time output!
+```
+
+**cURL with Streaming:**
+```bash
+curl -X POST "http://localhost:8001/clean-markdown-stream" \
+  -H "Content-Type: application/json" \
+  -d '{"markdown_content": "# Test\n\nContent..."}' \
+  --no-buffer
+```
 
 ## Quick Start
 

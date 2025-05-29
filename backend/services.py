@@ -125,7 +125,58 @@ class VLLMService:
         except Exception as e:
             logger.error(f"Error cleaning markdown with vLLM: {e}")
             raise
-    
+
+    async def clean_markdown_content_stream(self, markdown_content: str):
+        """
+        Clean and improve markdown content using vLLM with streaming response
+        
+        Args:
+            markdown_content: Raw markdown content to clean
+            
+        Yields:
+            str: Token by token response from vLLM
+            
+        Raises:
+            Exception: If cleaning fails
+        """
+        try:
+            system_prompt = self._get_cleaning_system_prompt()
+            user_prompt = f"Please clean and improve this markdown content:\n\n{markdown_content}"
+
+            # Estimate token count and adjust max_tokens if needed
+            estimated_input_tokens = self._estimate_token_count(system_prompt + user_prompt)
+            max_tokens = min(
+                settings.vllm_max_tokens,
+                settings.vllm_max_model_len - estimated_input_tokens - 100  # Leave 100 token buffer
+            )
+            
+            if max_tokens < 500:
+                raise Exception(f"Input too long: estimated {estimated_input_tokens} tokens, "
+                              f"leaving only {max_tokens} tokens for response")
+
+            # Create streaming response
+            stream = self.client.chat.completions.create(
+                model=settings.vllm_model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_tokens=max_tokens,
+                temperature=settings.vllm_temperature,
+                stream=True  # Enable streaming
+            )
+            
+            logger.info(f"Starting streaming markdown cleaning with vLLM (max_tokens: {max_tokens})")
+            
+            # Yield each token as it comes
+            for chunk in stream:
+                if chunk.choices[0].delta.content is not None:
+                    yield chunk.choices[0].delta.content
+                    
+        except Exception as e:
+            logger.error(f"Error streaming markdown cleaning with vLLM: {e}")
+            raise
+
     def _get_cleaning_system_prompt(self) -> str:
         """Get the system prompt for markdown cleaning"""
         return """You are an expert text processor. Your task is to clean and improve markdown content that was converted from PDF.

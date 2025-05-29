@@ -298,6 +298,124 @@ Processing error (500):
 }
 ```
 
+### POST `/clean-markdown-stream`
+
+Clean existing markdown content using vLLM with streaming response (token by token).
+
+**Request:**
+```json
+{
+  "markdown_content": "# Document\n\nContent with errors and poor formatting..."
+}
+```
+
+**Response:**
+- Content-Type: `text/plain`
+- Headers: 
+  - `X-Content-Type: streaming`
+  - `Cache-Control: no-cache`
+  - `Connection: keep-alive`
+
+**Response Body:** Streaming text (cleaned markdown content token by token)
+
+**Example with cURL:**
+```bash
+curl -X POST "http://localhost:8001/clean-markdown-stream" \
+  -H "Content-Type: application/json" \
+  -d '{"markdown_content": "# Test\n\nSample content..."}' \
+  --no-buffer
+```
+
+**Example with Python:**
+```python
+import httpx
+
+async with httpx.AsyncClient() as client:
+    payload = {"markdown_content": "# Test\n\nContent..."}
+    async with client.stream("POST", "/clean-markdown-stream", json=payload) as response:
+        async for chunk in response.aiter_text():
+            print(chunk, end="", flush=True)
+```
+
+**Error Responses:** Same as `/clean-markdown` endpoint.
+
+### POST `/upload-stream`
+
+Upload PDF file, convert to markdown, and clean with streaming LLM response.
+
+**Request:**
+- Content-Type: `multipart/form-data`
+- Form field: `file` (PDF file)
+
+**Response:**
+- Content-Type: `text/plain`
+- Headers:
+  - `X-Content-Type: streaming`
+  - `X-Filename: {original_filename}`
+  - `Cache-Control: no-cache`
+  - `Connection: keep-alive`
+
+**Response Body:**
+1. First chunk: JSON metadata (`data: {metadata}\n\n`)
+2. Following chunks: Cleaned markdown content (token by token)
+
+**Metadata Format:**
+```json
+{
+  "filename": "document.pdf",
+  "file_size_bytes": 102400,
+  "raw_content_length": 5000
+}
+```
+
+**Example with cURL:**
+```bash
+curl -X POST "http://localhost:8001/upload-stream" \
+  -F "file=@document.pdf" \
+  --no-buffer
+```
+
+**Example with Python:**
+```python
+import httpx
+
+async with httpx.AsyncClient() as client:
+    files = {'file': ('document.pdf', open('document.pdf', 'rb'), 'application/pdf')}
+    async with client.stream("POST", "/upload-stream", files=files) as response:
+        async for chunk in response.aiter_text():
+            print(chunk, end="", flush=True)
+```
+
+**Error Responses:** Same as `/upload` endpoint.
+
+---
+
+## Streaming vs Non-Streaming
+
+### When to Use Streaming
+
+**Use Streaming When:**
+- You want immediate feedback (see tokens as they're generated)
+- Processing large documents (better user experience)
+- Building interactive applications (like ChatGPT)
+- You need to show progress to users
+
+**Use Non-Streaming When:**
+- You need the complete response for further processing
+- You're building batch processing systems
+- You prefer simpler response handling
+- You need the response metadata (success flags, content length, etc.)
+
+### Performance Comparison
+
+| Aspect | Streaming | Non-Streaming |
+|--------|-----------|---------------|
+| **Time to first token** | ~0.1-0.5s | N/A (wait for complete response) |
+| **Total processing time** | Same | Same |
+| **User experience** | Interactive | Wait then complete |
+| **Response format** | Text stream | JSON with metadata |
+| **Error handling** | HTTP status + stream errors | JSON error format |
+
 ---
 
 ## Response Patterns

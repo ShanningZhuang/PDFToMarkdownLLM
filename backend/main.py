@@ -3,7 +3,7 @@ import atexit
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from config import settings
@@ -258,6 +258,150 @@ async def clean_existing_markdown(request: CleanMarkdownRequest):
     except Exception as e:
         logger.error(f"Error cleaning markdown: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to clean markdown: {str(e)}")
+
+
+@app.post("/clean-markdown-stream")
+async def clean_existing_markdown_stream(request: CleanMarkdownRequest):
+    """
+    Clean existing markdown content using vLLM with streaming response
+    
+    Args:
+        request: Request containing markdown content to clean
+        
+    Returns:
+        Streaming response with cleaned markdown content token by token
+    """
+    if not request.markdown_content.strip():
+        raise HTTPException(status_code=400, detail="Markdown content cannot be empty")
+    
+    # Check if vLLM is available
+    if not await vllm_manager._is_vllm_running():
+        if settings.vllm_auto_start:
+            logger.info("Starting vLLM service for markdown cleaning...")
+            success = await vllm_manager.start_vllm_service()
+            if not success:
+                raise HTTPException(
+                    status_code=503,
+                    detail="vLLM service is not available and failed to start"
+                )
+        else:
+            raise HTTPException(
+                status_code=503,
+                detail="vLLM service is not available"
+            )
+    
+    try:
+        async def generate_stream():
+            """Generate streaming response"""
+            async for token in document_service.vllm_service.clean_markdown_content_stream(
+                request.markdown_content
+            ):
+                yield token
+        
+        return StreamingResponse(
+            generate_stream(),
+            media_type="text/plain",
+            headers={
+                "X-Content-Type": "streaming",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error streaming markdown cleaning: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to clean markdown: {str(e)}")
+
+
+@app.post("/upload-stream")
+async def upload_pdf_stream(
+    file: UploadFile = File(...)
+):
+    """
+    Upload PDF file, convert to markdown, and clean with streaming LLM response
+    
+    Args:
+        file: PDF file to convert
+    
+    Returns:
+        Streaming response with cleaned markdown content token by token
+    """
+    
+    # Validate file type
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=400, 
+            detail="Only PDF files are supported"
+        )
+    
+    # Check file size
+    max_size = settings.max_file_size_mb * 1024 * 1024
+    if file.size and file.size > max_size:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size too large. Maximum size is {settings.max_file_size_mb}MB"
+        )
+    
+    # Check if vLLM is available
+    if not await vllm_manager._is_vllm_running():
+        if settings.vllm_auto_start:
+            logger.info("Attempting to start vLLM service...")
+            success = await vllm_manager.start_vllm_service()
+            if not success:
+                raise HTTPException(
+                    status_code=503,
+                    detail="vLLM service is not available and failed to start."
+                )
+        else:
+            raise HTTPException(
+                status_code=503,
+                detail="vLLM service is not available."
+            )
+    
+    try:
+        # Read file content
+        file_content = await file.read()
+        logger.info(f"Processing uploaded file for streaming: {file.filename} ({len(file_content)} bytes)")
+        
+        # Convert PDF to markdown first (non-streaming) - using the correct attribute
+        raw_markdown = await document_service.pdf_service.convert_pdf_to_markdown(
+            file_content, file.filename
+        )
+        
+        logger.info(f"PDF converted to markdown, starting streaming cleanup...")
+        
+        async def generate_stream():
+            """Generate streaming response with PDF metadata header"""
+            # Send metadata as first chunk (JSON format)
+            metadata = {
+                "filename": file.filename,
+                "file_size_bytes": len(file_content),
+                "raw_content_length": len(raw_markdown)
+            }
+            yield f"data: {metadata}\n\n"
+            
+            # Stream cleaned content
+            async for token in document_service.vllm_service.clean_markdown_content_stream(raw_markdown):
+                yield token
+        
+        return StreamingResponse(
+            generate_stream(),
+            media_type="text/plain",
+            headers={
+                "X-Content-Type": "streaming",
+                "X-Filename": file.filename,
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error processing file for streaming: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 
 if __name__ == "__main__":
