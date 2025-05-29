@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     # vLLM Service Configuration
     vllm_base_url: str = "http://localhost:8000"
     vllm_model_name: str = "mistralai/Mistral-7B-Instruct-v0.3"
+    vllm_auto_start: bool = True  # Auto-start vLLM service
+    vllm_startup_timeout: int = 300  # Timeout for vLLM startup (seconds)
+    vllm_gpu_memory_utilization: float = 0.8
+    vllm_max_model_len: int = 4096
     
     # File Upload Configuration
     max_file_size_mb: int = 50
@@ -27,6 +31,10 @@ class Settings(BaseSettings):
     vllm_max_tokens: int = 4096
     vllm_temperature: float = 0.1
     vllm_timeout: int = 300  # seconds
+    
+    # Model Download Configuration
+    model_cache_dir: str = "./models"  # Directory to cache downloaded models
+    auto_download_model: bool = True  # Auto-download model if not found
     
     class Config:
         env_file = ".env"

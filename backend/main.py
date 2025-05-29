@@ -1,4 +1,6 @@
 import logging
+import atexit
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -6,16 +8,45 @@ from pydantic import BaseModel
 
 from config import settings
 from services import document_service
+from vllm_manager import vllm_manager
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.log_level))
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager"""
+    # Startup
+    logger.info("Starting PDF to Markdown Converter Backend...")
+    
+    # Start vLLM service if auto-start is enabled
+    if settings.vllm_auto_start:
+        logger.info("Auto-starting vLLM service...")
+        success = await vllm_manager.start_vllm_service()
+        if success:
+            logger.info("vLLM service started successfully")
+        else:
+            logger.warning("Failed to start vLLM service - continuing without it")
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down backend services...")
+    await vllm_manager.stop_vllm_service()
+    logger.info("Backend shutdown complete")
+
+
 app = FastAPI(
     title="PDF to Markdown Converter",
     description="Convert PDF files to Markdown format using MarkItDown and clean with vLLM",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
+
+# Register shutdown handler for non-graceful exits
+atexit.register(lambda: logger.info("Process exiting..."))
 
 # Add CORS middleware
 app.add_middleware(
@@ -31,6 +62,10 @@ class CleanMarkdownRequest(BaseModel):
     markdown_content: str
 
 
+class VLLMControlRequest(BaseModel):
+    model_name: str = None
+
+
 @app.get("/")
 async def root():
     """Health check endpoint"""
@@ -40,7 +75,63 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Detailed health check including vLLM connectivity"""
-    return await document_service.get_health_status()
+    health_status = await document_service.get_health_status()
+    
+    # Add vLLM process status
+    vllm_status = vllm_manager.get_vllm_status()
+    health_status["vllm_process"] = vllm_status
+    
+    return health_status
+
+
+@app.get("/vllm/status")
+async def get_vllm_status():
+    """Get detailed vLLM service status"""
+    status = vllm_manager.get_vllm_status()
+    status["service_responsive"] = await vllm_manager._is_vllm_running()
+    return status
+
+
+@app.post("/vllm/start")
+async def start_vllm_service(request: VLLMControlRequest = None):
+    """Start vLLM service"""
+    model_name = request.model_name if request else None
+    
+    logger.info(f"Manual start requested for vLLM service (model: {model_name or 'default'})")
+    success = await vllm_manager.start_vllm_service(model_name)
+    
+    return {
+        "success": success,
+        "message": "vLLM service started successfully" if success else "Failed to start vLLM service",
+        "status": vllm_manager.get_vllm_status()
+    }
+
+
+@app.post("/vllm/stop")
+async def stop_vllm_service():
+    """Stop vLLM service"""
+    logger.info("Manual stop requested for vLLM service")
+    success = await vllm_manager.stop_vllm_service()
+    
+    return {
+        "success": success,
+        "message": "vLLM service stopped successfully" if success else "Failed to stop vLLM service"
+    }
+
+
+@app.post("/vllm/restart")
+async def restart_vllm_service(request: VLLMControlRequest = None):
+    """Restart vLLM service"""
+    model_name = request.model_name if request else None
+    
+    logger.info(f"Manual restart requested for vLLM service (model: {model_name or 'default'})")
+    success = await vllm_manager.restart_vllm_service(model_name)
+    
+    return {
+        "success": success,
+        "message": "vLLM service restarted successfully" if success else "Failed to restart vLLM service",
+        "status": vllm_manager.get_vllm_status()
+    }
 
 
 @app.post("/upload")
@@ -73,6 +164,23 @@ async def upload_pdf(
             status_code=400,
             detail=f"File size too large. Maximum size is {settings.max_file_size_mb}MB"
         )
+    
+    # Check if vLLM is needed and available
+    if clean_with_llm and not await vllm_manager._is_vllm_running():
+        logger.warning("vLLM cleaning requested but service is not running")
+        if settings.vllm_auto_start:
+            logger.info("Attempting to start vLLM service...")
+            success = await vllm_manager.start_vllm_service()
+            if not success:
+                raise HTTPException(
+                    status_code=503,
+                    detail="vLLM service is not available and failed to start. Try again or use convert-text endpoint."
+                )
+        else:
+            raise HTTPException(
+                status_code=503,
+                detail="vLLM service is not available. Use convert-text endpoint for basic conversion."
+            )
     
     try:
         # Read file content
@@ -121,6 +229,22 @@ async def clean_existing_markdown(request: CleanMarkdownRequest):
     if not request.markdown_content.strip():
         raise HTTPException(status_code=400, detail="Markdown content cannot be empty")
     
+    # Check if vLLM is available
+    if not await vllm_manager._is_vllm_running():
+        if settings.vllm_auto_start:
+            logger.info("Starting vLLM service for markdown cleaning...")
+            success = await vllm_manager.start_vllm_service()
+            if not success:
+                raise HTTPException(
+                    status_code=503,
+                    detail="vLLM service is not available and failed to start"
+                )
+        else:
+            raise HTTPException(
+                status_code=503,
+                detail="vLLM service is not available"
+            )
+    
     try:
         cleaned_content = await document_service.vllm_service.clean_markdown_content(
             request.markdown_content
@@ -142,6 +266,7 @@ if __name__ == "__main__":
     logger.info(f"Starting server on {settings.host}:{settings.port}")
     logger.info(f"vLLM service URL: {settings.vllm_base_url}")
     logger.info(f"vLLM model: {settings.vllm_model_name}")
+    logger.info(f"vLLM auto-start: {settings.vllm_auto_start}")
     
     uvicorn.run(
         "main:app",
