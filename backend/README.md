@@ -207,6 +207,110 @@ Once the server is running, visit:
 - Swagger UI: `http://localhost:8001/docs`
 - ReDoc: `http://localhost:8001/redoc`
 
+## Testing
+
+The project uses **pytest** for professional testing with comprehensive coverage of all API endpoints and functionality.
+
+### Test Structure
+
+```
+tests/
+├── __init__.py              # Test package
+├── conftest.py             # Pytest fixtures and configuration
+├── test_health.py          # Health check tests
+├── test_pdf_conversion.py  # PDF conversion tests
+├── test_markdown_cleaning.py # Markdown cleaning tests
+└── test_vllm_management.py # vLLM management tests
+```
+
+### Quick Start
+
+1. **Install test dependencies**:
+```bash
+pip install -r test_requirements.txt
+```
+
+2. **Run all tests**:
+```bash
+pytest
+```
+
+3. **Run with coverage**:
+```bash
+pytest --cov=. --cov-report=html
+```
+
+### Test Commands
+
+```bash
+# Run specific test files
+pytest tests/test_health.py
+pytest tests/test_pdf_conversion.py
+
+# Run with different verbosity levels
+pytest -v                    # Verbose
+pytest -v -s                 # Verbose with output capture disabled
+
+# Run tests in parallel
+pytest -n auto
+
+# Generate HTML report
+pytest --html=report.html --self-contained-html
+
+# Show slowest tests
+pytest --durations=10
+
+# Run only fast tests (skip slow ones)
+pytest -m "not slow"
+```
+
+### Test Configuration
+
+Tests are configured via `pytest.ini` with:
+- **Async Support**: Automatic async/await test detection
+- **Fixtures**: Reusable HTTP client and sample data
+- **Performance**: Response time validation and timing
+- **Error Handling**: Tests for both success and failure scenarios
+- **Integration**: End-to-end API testing
+
+### Sample Test Output
+
+```bash
+$ pytest -v
+========================= test session starts =========================
+tests/test_health.py::test_health_check PASSED           [ 12%]
+tests/test_health.py::test_vllm_status PASSED            [ 25%]
+tests/test_pdf_conversion.py::test_pdf_upload_with_llm PASSED [ 37%]
+tests/test_pdf_conversion.py::test_pdf_upload_without_llm PASSED [ 50%]
+tests/test_pdf_conversion.py::test_convert_text_only PASSED [ 62%]
+tests/test_markdown_cleaning.py::test_clean_markdown_small_content PASSED [ 75%]
+tests/test_vllm_management.py::test_vllm_status_after_operations PASSED [ 87%]
+========================= 7 passed in 15.23s =========================
+```
+
+### Test Features
+
+- **HTTP Client**: Uses `httpx.AsyncClient` for async API testing
+- **Fixtures**: Automatic setup of test client and sample data
+- **File Testing**: Automatic detection of sample PDF files
+- **Error Scenarios**: Tests for invalid inputs and edge cases
+- **Performance**: Response time validation and benchmarking
+- **vLLM Integration**: Tests handle vLLM service availability gracefully
+- **Coverage**: Comprehensive endpoint and error path coverage
+
+### Prerequisites for Testing
+
+- **Running Server**: Tests expect the backend to be running on `localhost:8001`
+- **Sample PDF**: Place a PDF file (like `AlexNet.pdf`) in the parent directory for file upload tests
+- **vLLM Service**: Some tests require vLLM to be running (tests will skip gracefully if not available)
+
+### Test Categories
+
+- **Health Tests**: API status, vLLM connectivity, response times
+- **PDF Conversion**: File upload, conversion with/without LLM, error handling
+- **Markdown Cleaning**: Content cleaning, token limits, validation
+- **vLLM Management**: Service start/stop/restart, status monitoring
+
 ## Backend Architecture
 
 ### Overview
