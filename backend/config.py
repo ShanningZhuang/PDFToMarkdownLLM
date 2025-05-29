@@ -29,8 +29,12 @@ class Settings(BaseSettings):
     
     # vLLM Parameters
     vllm_max_tokens: int = 16384
-    vllm_temperature: float = 0.
+    vllm_temperature: float = 0.1
     vllm_timeout: int = 300  # seconds
+    
+    # Streaming Configuration
+    vllm_stream_chunk_size: int = 1  # Size of streaming chunks
+    vllm_disable_log_stats: bool = True  # Disable vLLM stats logging for better streaming
     
     # Model Download Configuration
     model_cache_dir: str = "./models"  # Directory to cache downloaded models

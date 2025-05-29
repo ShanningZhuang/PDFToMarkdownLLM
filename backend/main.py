@@ -290,26 +290,44 @@ async def clean_existing_markdown_stream(request: CleanMarkdownRequest):
                 detail="vLLM service is not available"
             )
     
-    try:
-        async def generate_stream():
-            """Generate streaming response"""
-            async for token in document_service.vllm_service.clean_markdown_content_stream(
+    # Use the sync generator directly without async wrapper
+    def generate_stream():
+        """Generate streaming response - use sync function"""
+        try:
+            logger.info("Starting streaming response generation...")
+            
+            # Get the sync generator from the service
+            generator = document_service.vllm_service.clean_markdown_content_stream(
                 request.markdown_content
-            ):
+            )
+            
+            token_count = 0
+            for token in generator:  # Sync iteration
+                token_count += 1
+                logger.debug(f"FastAPI yielding token {token_count}: {repr(token[:20])}")
                 yield token
-        
+                
+            logger.info(f"FastAPI streaming completed with {token_count} tokens")
+            
+        except Exception as stream_error:
+            logger.error(f"Error in FastAPI stream generation: {stream_error}")
+            yield f"\n\n[ERROR: {str(stream_error)}]"
+            raise
+    
+    try:
         return StreamingResponse(
             generate_stream(),
             media_type="text/plain",
             headers={
                 "X-Content-Type": "streaming",
                 "Cache-Control": "no-cache",
-                "Connection": "keep-alive"
+                "Connection": "keep-alive",
+                "Transfer-Encoding": "chunked"  # Ensure chunked encoding
             }
         )
     except Exception as e:
-        logger.error(f"Error streaming markdown cleaning: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to clean markdown: {str(e)}")
+        logger.error(f"Error creating streaming response: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create streaming response: {str(e)}")
 
 
 @app.post("/upload-stream")

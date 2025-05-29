@@ -126,7 +126,7 @@ class VLLMService:
             logger.error(f"Error cleaning markdown with vLLM: {e}")
             raise
 
-    async def clean_markdown_content_stream(self, markdown_content: str):
+    def clean_markdown_content_stream(self, markdown_content: str):
         """
         Clean and improve markdown content using vLLM with streaming response
         
@@ -140,8 +140,9 @@ class VLLMService:
             Exception: If cleaning fails
         """
         try:
-            system_prompt = self._get_cleaning_system_prompt()
-            user_prompt = f"Please clean and improve this markdown content:\n\n{markdown_content}"
+            # Use proper Qwen3 system message format
+            system_prompt = "Clean and format the provided markdown text. Fix any formatting errors, OCR mistakes, and improve structure. Output only the cleaned markdown without explanations."
+            user_prompt = f"Clean this markdown content:\n\n{markdown_content}"
 
             # Estimate token count and adjust max_tokens if needed
             estimated_input_tokens = self._estimate_token_count(system_prompt + user_prompt)
@@ -154,24 +155,83 @@ class VLLMService:
                 raise Exception(f"Input too long: estimated {estimated_input_tokens} tokens, "
                               f"leaving only {max_tokens} tokens for response")
 
-            # Create streaming response
+            logger.info(f"Starting streaming markdown cleaning with vLLM (max_tokens: {max_tokens}, no-thinking mode)")
+            
+            # Create streaming response with Qwen3 non-thinking mode settings
+            # According to Qwen3 docs: For non-thinking mode, use Temperature=0.7, TopP=0.8, TopK=20
             stream = self.client.chat.completions.create(
                 model=settings.vllm_model_name,
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "system", "content": "You are a text formatter. Respond directly without thinking. /no_think"},
+                    {"role": "user", "content": f"/no_think Clean this markdown:\n\n{markdown_content}"}
                 ],
                 max_tokens=max_tokens,
-                temperature=settings.vllm_temperature,
-                stream=True  # Enable streaming
+                temperature=0.7,  # Qwen3 recommended for non-thinking mode
+                top_p=0.8,        # Qwen3 recommended for non-thinking mode
+                stream=True,
+                stream_options={"include_usage": False}
             )
             
-            logger.info(f"Starting streaming markdown cleaning with vLLM (max_tokens: {max_tokens})")
+            logger.info(f"Stream object created, starting token iteration...")
+            token_count = 0
+            thinking_mode = False
+            buffer = ""
             
-            # Yield each token as it comes
-            for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    yield chunk.choices[0].delta.content
+            # IMPORTANT: Use sync iteration, not async - this was the bug!
+            try:
+                for chunk in stream:  # NOT async for!
+                    if chunk.choices and len(chunk.choices) > 0:
+                        choice = chunk.choices[0]
+                        if choice.delta and choice.delta.content is not None:
+                            content = choice.delta.content
+                            buffer += content
+                            
+                            # Handle thinking tags - filter them out
+                            if "<think>" in buffer:
+                                thinking_mode = True
+                                # Remove everything up to and including <think>
+                                buffer = buffer.split("<think>", 1)[-1]
+                                continue
+                            elif "</think>" in buffer and thinking_mode:
+                                thinking_mode = False
+                                # Remove everything up to and including </think>
+                                parts = buffer.split("</think>", 1)
+                                if len(parts) > 1:
+                                    buffer = parts[1]
+                                else:
+                                    buffer = ""
+                                # Continue to process any remaining content
+                                if buffer.strip():
+                                    token_count += 1
+                                    logger.debug(f"Yielding token {token_count}: '{buffer[:20]}...'")
+                                    yield buffer
+                                    buffer = ""
+                                continue
+                            elif thinking_mode:
+                                # Skip content while in thinking mode
+                                buffer = ""
+                                continue
+                            else:
+                                # Normal content - yield it
+                                token_count += 1
+                                logger.debug(f"Yielding token {token_count}: '{content[:20]}...'")
+                                yield content
+                                buffer = ""
+                                
+                        elif choice.finish_reason:
+                            logger.info(f"Stream finished with reason: {choice.finish_reason}")
+                            # Yield any remaining buffer content
+                            if buffer.strip() and not thinking_mode:
+                                yield buffer
+                            break
+                    else:
+                        logger.debug("Received chunk with no choices")
+                        
+            except Exception as stream_error:
+                logger.error(f"Error during streaming iteration: {stream_error}")
+                raise
+                
+            logger.info(f"Streaming completed. Total tokens yielded: {token_count}")
                     
         except Exception as e:
             logger.error(f"Error streaming markdown cleaning with vLLM: {e}")
@@ -179,20 +239,7 @@ class VLLMService:
 
     def _get_cleaning_system_prompt(self) -> str:
         """Get the system prompt for markdown cleaning"""
-        return """You are an expert text processor. Your task is to clean and improve markdown content that was converted from PDF.
-
-Please:
-1. Fix any obvious OCR errors and garbled text
-2. Improve formatting and structure
-3. Ensure proper markdown syntax
-4. Remove excessive whitespace and fix line breaks
-5. Keep the content meaning intact
-6. Maintain the original language of the document
-7. Fix broken tables and lists
-8. Correct heading hierarchies
-9. Remove artifacts from PDF conversion
-
-Return only the cleaned markdown content without any additional commentary or explanations."""
+        return """Fix formatting and clean the text. Output the corrected version immediately without any explanation."""
 
     def _estimate_token_count(self, text: str) -> int:
         """
