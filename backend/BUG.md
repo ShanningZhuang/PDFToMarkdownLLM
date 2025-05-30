@@ -1,0 +1,1 @@
+1. When kill the main.py, the vllm service will not be killed. And when run main.py again. It will not attach to the exist vllm process.
