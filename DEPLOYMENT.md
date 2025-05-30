@@ -5,9 +5,9 @@ This guide explains how to deploy the PDF to Markdown Converter to production us
 ## 🏗️ Architecture
 
 ```
-Internet → pdf2markdown.tech:80 → Nginx Reverse Proxy
-                                      ├── / → Frontend (server:8002)
-                                      └── /api → Backend (server:8001)
+Internet → pdf2markdown.tech:443 (HTTPS) → Nginx Reverse Proxy
+                                              ├── / → Frontend (server:8002)
+                                              └── /api → Backend (server:8001)
 ```
 
 ## 🚀 Deployment Steps
@@ -18,6 +18,7 @@ Ensure your server has the following services running:
 - **Frontend**: Next.js app on port 8002
 - **Backend**: FastAPI app on port 8001
 - **vLLM**: Model server on port 8000 (internal)
+- **SSL Certificates**: Located in `ssl/` directory
 
 ### 2. Install Nginx
 
@@ -30,7 +31,26 @@ sudo apt install nginx
 sudo yum install nginx
 ```
 
-### 3. Configure Nginx
+### 3. SSL Certificate Setup
+
+Your SSL certificates should be in the standard system SSL directories:
+- **Certificate**: `/etc/ssl/certs/pdf2markdown.tech.pem`
+- **Private Key**: `/etc/ssl/private/pdf2markdown.tech.key`
+
+If you have certificates in your project's `ssl/` directory, move them to the system locations:
+```bash
+# Move certificates to system directories
+sudo cp ssl/pdf2markdown.tech.pem /etc/ssl/certs/
+sudo cp ssl/pdf2markdown.tech.key /etc/ssl/private/
+
+# Set proper permissions
+sudo chmod 644 /etc/ssl/certs/pdf2markdown.tech.pem
+sudo chmod 600 /etc/ssl/private/pdf2markdown.tech.key
+sudo chown root:root /etc/ssl/certs/pdf2markdown.tech.pem
+sudo chown root:root /etc/ssl/private/pdf2markdown.tech.key
+```
+
+### 4. Configure Nginx
 
 Copy the provided `nginx.conf` to your Nginx sites configuration:
 
@@ -51,7 +71,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 4. Start Services
+### 5. Start Services
 
 #### Backend (Port 8001)
 ```bash
@@ -78,7 +98,7 @@ python -m vllm.entrypoints.openai.api_server \
   --port 8000
 ```
 
-### 5. Environment Variables
+### 6. Environment Variables
 
 #### Frontend (.env.production)
 ```env
@@ -121,19 +141,40 @@ MAX_FILE_SIZE_MB=50
 
 ## 🔍 Testing the Setup
 
-### 1. Health Check
+### 1. SSL Certificate Verification
 ```bash
+# Test SSL certificate
+openssl s_client -connect pdf2markdown.tech:443 -servername pdf2markdown.tech
+
+# Check certificate expiration
+openssl x509 -in /etc/ssl/certs/pdf2markdown.tech.pem -text -noout | grep "Not After"
+
+# Verify certificate and key match
+openssl x509 -noout -modulus -in /etc/ssl/certs/pdf2markdown.tech.pem | openssl md5
+openssl rsa -noout -modulus -in /etc/ssl/private/pdf2markdown.tech.key | openssl md5
+```
+
+### 2. Health Check
+```bash
+# HTTPS (recommended)
+curl https://pdf2markdown.tech/api/health
+
+# HTTP (will redirect to HTTPS)
 curl http://pdf2markdown.tech/api/health
 ```
 
-### 2. Frontend Access
+### 3. Frontend Access
 ```bash
-curl http://pdf2markdown.tech/
+# HTTPS
+curl https://pdf2markdown.tech/
+
+# HTTP (will redirect)
+curl -I http://pdf2markdown.tech/
 ```
 
-### 3. File Upload Test
+### 4. File Upload Test
 ```bash
-curl -X POST "http://pdf2markdown.tech/api/upload" \
+curl -X POST "https://pdf2markdown.tech/api/upload" \
   -F "file=@test.pdf"
 ```
 
