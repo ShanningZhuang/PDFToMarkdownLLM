@@ -71,45 +71,9 @@
   @apply bg-gray-300 rounded-lg hover:bg-gray-400;
 }
 
-/* Markdown content styles */
+/* Markdown content styles using typography plugin */
 .markdown-content {
-  @apply prose prose-gray max-w-none;
-}
-
-.markdown-content h1 {
-  @apply text-3xl font-bold mb-4 text-gray-900;
-}
-
-.markdown-content h2 {
-  @apply text-2xl font-semibold mb-3 text-gray-800;
-}
-
-.markdown-content h3 {
-  @apply text-xl font-medium mb-2 text-gray-700;
-}
-
-.markdown-content p {
-  @apply mb-4 text-gray-600 leading-relaxed;
-}
-
-.markdown-content ul, .markdown-content ol {
-  @apply mb-4 pl-6;
-}
-
-.markdown-content li {
-  @apply mb-1 text-gray-600;
-}
-
-.markdown-content code {
-  @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800;
-}
-
-.markdown-content pre {
-  @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4;
-}
-
-.markdown-content blockquote {
-  @apply border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-4;
+  @apply prose prose-gray max-w-none prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-blue-600 prose-strong:text-gray-900 prose-code:text-gray-800 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100;
 }
 
 /* Animation for streaming text */
