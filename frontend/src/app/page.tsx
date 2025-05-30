@@ -401,7 +401,7 @@ export default function HomePage() {
             
             <div className="flex items-center space-x-4 text-sm text-gray-500">
               <a 
-                href="https://github.com/ShanningZhuang" 
+                href="https://github.com/ShanningZhuang/PDFToMarkdownLLM" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hover:text-gray-700 transition-colors flex items-center space-x-1"
