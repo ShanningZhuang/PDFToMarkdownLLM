@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+    depends_on:
+      - backend
+    networks:
+      - pdf2md-network
+    restart: unless-stopped
+
+  # Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - VLLM_BASE_URL=http://vllm:8000
+      - VLLM_AUTO_START=false
+      - MAX_FILE_SIZE_MB=50
+    volumes:
+      - ./backend:/app
+      - backend-cache:/app/.cache
+    depends_on:
+      - vllm
+    networks:
+      - pdf2md-network
+    restart: unless-stopped
+
+  # vLLM Service
+  vllm:
+    image: vllm/vllm-openai:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_NAME=mistralai/Mistral-7B-Instruct-v0.3
+    command: >
+      --model mistralai/Mistral-7B-Instruct-v0.3
+      --host 0.0.0.0
+      --port 8000
+      --served-model-name mistral-7b
+      --max-model-len 4096
+      --tensor-parallel-size 1
+    volumes:
+      - vllm-cache:/root/.cache/huggingface
+    networks:
+      - pdf2md-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  backend-cache:
+  vllm-cache:
+
+networks:
+  pdf2md-network:
+    driver: bridge 
