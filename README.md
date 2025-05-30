@@ -2,6 +2,8 @@
 
 A complete full-stack application for converting PDF documents to clean Markdown format using AI-powered text processing. Features real-time streaming, modern UI, and Docker deployment.
 
+🌐 **Live Demo**: [http://pdf2markdown.tech/](http://pdf2markdown.tech/)
+
 ## 🚀 Features
 
 - **📄 PDF Upload**: Drag & drop interface with file validation
@@ -46,32 +48,38 @@ A complete full-stack application for converting PDF documents to clean Markdown
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 🌐 Try Online
+
+Visit the live demo at **[http://pdf2markdown.tech/](http://pdf2markdown.tech/)** to try the application without any setup!
+
+### 🐳 Local Deployment
+
+#### Prerequisites
 
 - Docker and Docker Compose
 - NVIDIA GPU (for vLLM acceleration)
 - 8GB+ RAM recommended
 
-### 1. Clone and Start
+#### 1. Clone and Start
 
 ```bash
-git clone <repository-url>
-cd PDF2Markdown_LLMs
+git clone https://github.com/ShanningZhuang/PDFToMarkdownLLM.git
+cd PDFToMarkdownLLM
 
 # Start all services
 docker-compose up -d
 ```
 
-### 2. Access the Application
+#### 2. Access the Application
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8001
 - **API Documentation**: http://localhost:8001/docs
 - **vLLM API**: http://localhost:8000
 
-### 3. Upload and Convert
+#### 3. Upload and Convert
 
-1. Open http://localhost:3000
+1. Open http://localhost:3000 (or visit [pdf2markdown.tech](http://pdf2markdown.tech/))
 2. Drag & drop a PDF file or click to browse
 3. Configure processing options (LLM cleaning, streaming)
 4. Watch the real-time conversion
@@ -113,7 +121,7 @@ python -m vllm.entrypoints.openai.api_server \
 ## 📁 Project Structure
 
 ```
-PDF2Markdown_LLMs/
+PDFToMarkdownLLM/
 ├── frontend/                 # Next.js frontend application
 │   ├── src/
 │   │   ├── app/             # Next.js app router
@@ -182,25 +190,31 @@ See [backend/API_DOCS.md](backend/API_DOCS.md) for complete API documentation.
 
 ## 🎯 Usage Examples
 
-### Basic PDF Conversion
+### Online Usage
+
+Simply visit [http://pdf2markdown.tech/](http://pdf2markdown.tech/) and start converting your PDFs!
+
+### API Usage
+
+#### Basic PDF Conversion
 
 ```bash
-curl -X POST "http://localhost:8001/upload" \
+curl -X POST "http://pdf2markdown.tech/api/upload" \
   -F "file=@document.pdf"
 ```
 
-### Streaming Conversion
+#### Streaming Conversion
 
 ```bash
-curl -X POST "http://localhost:8001/upload-stream" \
+curl -X POST "http://pdf2markdown.tech/api/upload-stream" \
   -F "file=@document.pdf" \
   --no-buffer
 ```
 
-### Health Check
+#### Health Check
 
 ```bash
-curl http://localhost:8001/health
+curl http://pdf2markdown.tech/api/health
 ```
 
 ## 🔍 Monitoring and Debugging
@@ -286,6 +300,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📞 Support
 
 For support and questions:
-- Create an issue in the repository
+- Try the live demo: [http://pdf2markdown.tech/](http://pdf2markdown.tech/)
+- Create an issue in the [GitHub repository](https://github.com/ShanningZhuang/PDFToMarkdownLLM)
 - Check the [API documentation](backend/API_DOCS.md)
-- Review the troubleshooting section above 
+- Review the troubleshooting section above
+
+---
+
+**Created by [Shanning Zhuang 庄善宁](https://shanningzhuang.github.io/) - PhD Student at Tsinghua University** 
