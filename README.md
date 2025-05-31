@@ -2,7 +2,7 @@
 
 A complete full-stack application for converting PDF documents to clean Markdown format using AI-powered text processing. Features real-time streaming, modern UI, and Docker deployment.
 
-🌐 **Live Demo**: [http://pdf2markdown.tech/](http://pdf2markdown.tech/)
+🌐 **Live Demo**: [https://pdf2markdown.tech:24680/](https://pdf2markdown.tech:24680/)
 
 ## 🚀 Features
 
