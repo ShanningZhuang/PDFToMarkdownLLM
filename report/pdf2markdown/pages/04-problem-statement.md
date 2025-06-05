@@ -1,5 +1,6 @@
 ---
 layout: default
+class: slide-overflow
 ---
 
 # 📚 Background & Problem Statement

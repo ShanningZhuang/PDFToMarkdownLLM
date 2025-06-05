@@ -1,7 +1,7 @@
 ---
 layout: cover
 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
-class: text-center text-white
+class: text-center text-white slide-overflow
 ---
 
 # PDF to Markdown Converter

@@ -1,6 +1,6 @@
 ---
 layout: center
-class: text-center
+class: text-center slide-overflow
 ---
 
 # 🎯 Live Demo - Show Don't Tell

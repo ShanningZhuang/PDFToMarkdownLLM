@@ -1,5 +1,5 @@
 ---
-layout: center
+layout: default
 ---
 
 # 🤖 AI Agents & Productivity Revolution

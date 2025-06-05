@@ -1,6 +1,6 @@
 ---
 layout: center
-class: text-center
+class: text-center slide-overflow
 ---
 
 # 🖱️ Cursor IDE Poll

@@ -1,6 +1,5 @@
 ---
-layout: center
-class: text-center
+layout: default
 ---
 
 # 🎯 Conclusion & Q&A

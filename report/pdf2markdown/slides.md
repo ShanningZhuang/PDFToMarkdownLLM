@@ -1,6 +1,6 @@
 ---
 # You can also start simply with 'default'
-theme: seriph
+theme: default
 # random image from a curated Unsplash collection by Anthony
 # like them? see https://unsplash.com/collections/94734566/slidev
 background: https://cover.sli.dev
@@ -14,7 +14,7 @@ info: |
   
   Learn more at [pdf2markdown.tech](https://pdf2markdown.tech:24680/)
 # apply unocss classes to the current slide
-class: text-center
+class: text-center slide-overflow
 # https://sli.dev/features/drawing
 drawings:
   persist: false
@@ -25,6 +25,11 @@ mdc: true
 # open graph
 # seoMeta:
 #  ogImage: https://cover.sli.dev
+# aspectRatio: 16/16
+# canvasWidth: 980
+defaults:
+  class: slide-overflow
+  scrollable: true
 src: ./pages/01-title.md
 ---
 

@@ -1,0 +1,68 @@
+/* Global styles for PDF to Markdown presentation */
+
+/* Overflow handling for slides with long content */
+.slide-overflow {
+  overflow-y: auto;
+  max-height: 100vh;
+  padding: 1rem;
+}
+
+/* Alternative overflow class with specific height */
+.slide-scroll {
+  overflow-y: auto;
+  height: 90vh;
+  padding: 1rem;
+}
+
+/* Compact content styling */
+.compact-content {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Hide scrollbar but keep functionality */
+.slide-overflow::-webkit-scrollbar,
+.slide-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.slide-overflow::-webkit-scrollbar-track,
+.slide-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.slide-overflow::-webkit-scrollbar-thumb,
+.slide-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.slide-overflow::-webkit-scrollbar-thumb:hover,
+.slide-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Smooth scrolling */
+.slide-overflow,
+.slide-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Project link on every slide */
+.slidev-layout::after {
+  content: "🚀 pdf2markdown.tech:24680";
+  position: fixed;
+  bottom: 0rem;
+  right: 1rem;
+  opacity: 0.6;
+  font-size: 0.875rem;
+  color: #2563eb;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+  z-index: 100;
+}
+
+.slidev-layout:hover::after {
+  opacity: 1;
+} 

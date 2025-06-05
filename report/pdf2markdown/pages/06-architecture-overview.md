@@ -1,5 +1,6 @@
 ---
-layout: center
+layout: default
+class: slide-overflow
 ---
 
 # 🏗️ System Architecture Overview
