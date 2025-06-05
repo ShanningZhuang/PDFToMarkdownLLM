@@ -5,12 +5,14 @@
   "scripts": {
     "build": "slidev build",
     "dev": "slidev --open",
-    "export": "slidev export"
+    "export": "slidev export",
+    "start": "node server.js"
   },
   "dependencies": {
     "@slidev/cli": "^51.8.1",
     "@slidev/theme-default": "latest",
     "@slidev/theme-seriph": "latest",
+    "express": "^5.1.0",
     "slidev-component-scroll": "^1.1.0",
     "vue": "^3.5.16"
   }
