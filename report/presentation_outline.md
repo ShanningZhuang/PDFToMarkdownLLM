@@ -21,6 +21,9 @@
 ### Interactive Survey
 - **Question**: "How many of you are currently using Cursor IDE?"
 
+Add cursor image
+Add Cursor icon
+
 ---
 
 ## 3. 📚 Background & Problem Statement

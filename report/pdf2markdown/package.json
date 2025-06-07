@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "slidev build",
+    "build": "slidev build --base /report/",
     "dev": "slidev --open",
     "export": "slidev export",
     "start": "node server.js"
