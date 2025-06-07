@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { FileText, Settings, RefreshCw, Zap, Clock } from 'lucide-react';
+import { FileText, Settings, RefreshCw, Zap, Clock, BarChart2 } from 'lucide-react';
 import FileUpload from '@/components/FileUpload';
 import MarkdownPreview from '@/components/MarkdownPreview';
 import StatusIndicator, { StatusType } from '@/components/StatusIndicator';
@@ -221,6 +221,12 @@ export default function HomePage() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <a href="https://pdf2markdown.tech:24680/report/" target="_blank" rel="noopener noreferrer" 
+                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm text-sm font-medium">
+                <BarChart2 className="h-4 w-4" />
+                <span>View Report</span>
+              </a>
+
               {/* Backend Status */}
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${
