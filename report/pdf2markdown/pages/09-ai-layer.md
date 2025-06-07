@@ -2,77 +2,31 @@
 layout: default
 ---
 
-# 🤖 AI/LLM Layer
+# The AI Core
 
-## vLLM Framework
-
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-2 gap-8 items-center">
   <div>
-    <h3 class="text-xl font-semibold mb-4">🚀 vLLM Advantages</h3>
-    <ul class="space-y-3">
-      <li class="flex items-center space-x-3">
-        <span class="text-green-500">⚡</span>
-        <span>Optimized inference server for LLMs</span>
-      </li>
-      <li class="flex items-center space-x-3">
-        <span class="text-blue-500">🎮</span>
-        <span>GPU acceleration support</span>
-      </li>
-      <li class="flex items-center space-x-3">
-        <span class="text-purple-500">🔗</span>
-        <span>OpenAI-compatible API</span>
-      </li>
-      <li class="flex items-center space-x-3">
-        <span class="text-orange-500">📈</span>
-        <span>Horizontal scaling capabilities</span>
-      </li>
+    <ul class="text-lg space-y-3 font-mono">
+      <li><span class="font-bold text-gray-500">INPUT:</span> Raw, messy text</li>
+      <li><span class="font-bold text-gray-500">ENGINE:</span> vLLM + Qwen-32B</li>
+      <li><span class="font-bold text-gray-500">PROCESS:</span> Streamed Post-processing</li>
+      <li><span class="font-bold text-gray-500">OUTPUT:</span> Clean, structured Markdown</li>
     </ul>
+    <div class="mt-4 text-center">
+      <carbon-chip class="text-8xl mx-auto text-purple-500" />
+    </div>
   </div>
-
   <div>
-    <h3 class="text-xl font-semibold mb-4">🎯 Model Selection</h3>
-    <div class="p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
-      <h4 class="font-semibold text-lg mb-2">Qwen-32B</h4>
-      <ul class="text-sm space-y-2">
-        <li>• Strong performance on text processing tasks</li>
-        <li>• Good balance of quality and performance</li>
-        <li>• Efficient memory usage</li>
-        <li>• Excellent instruction following</li>
-      </ul>
+    <p class="text-xl font-semibold">The "Magic" Prompt:</p>
+    <div class="mt-2 p-3 bg-gray-100 rounded-lg text-xs prose">
+      <p>You are a Markdown formatting expert. Please clean up and fix the following poorly formatted text converted from a PDF. You need to:</p>
+      <ol>
+        <li>Correct wrong line breaks and merge paragraphs.</li>
+        <li>Identify and correctly mark up headings of all levels.</li>
+        <li>Fix the formatting of tables and lists.</li>
+        <li>Remove garbled text introduced by OCR or encoding errors.</li>
+      </ol>
+      <p><strong>Please directly output the cleaned, complete Markdown text without any explanations or extra conversation.</strong></p>
     </div>
   </div>
-</div>
-
-## Prompt Engineering
-
-<div class="mt-8 p-6 bg-gray-50 rounded-lg">
-  <h3 class="text-lg font-semibold mb-4">📝 Optimization Strategy</h3>
-  
-  <div class="grid grid-cols-2 gap-6">
-    <div>
-      <h4 class="font-medium mb-2">🎯 Prompt Design</h4>
-      <ul class="text-sm space-y-1">
-        <li>• Clear task instructions</li>
-        <li>• Format specifications</li>
-        <li>• Quality guidelines</li>
-        <li>• Error handling</li>
-      </ul>
-    </div>
-    
-    <div>
-      <h4 class="font-medium mb-2">🔧 Model Parameters</h4>
-      <ul class="text-sm space-y-1">
-        <li>• Temperature optimization</li>
-        <li>• Token limit management</li>
-        <li>• Streaming configuration</li>
-        <li>• Response filtering</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<div class="mt-6 text-center p-4 bg-blue-50 rounded-lg">
-  <p class="text-lg font-medium">
-    🎯 <strong>Result:</strong> High-quality Markdown output with preserved structure and formatting
-  </p>
 </div> 

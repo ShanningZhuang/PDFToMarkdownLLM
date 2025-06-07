@@ -1,59 +1,33 @@
 ---
-layout: default
+layout: center
+class: text-center
 ---
 
-# 🎯 Conclusion & Q&A
+# Thank You
 
-## Key Takeaways
-
-<div class="grid grid-cols-2 gap-8 mt-8">
-  <div class="p-6 bg-blue-50 rounded-lg">
-    <div class="text-3xl mb-3">🤖</div>
-    <h3 class="text-lg font-semibold mb-2">AI-Powered Processing</h3>
-    <p class="text-sm">Transforming legacy document handling with intelligent conversion</p>
-  </div>
-  
-  <div class="p-6 bg-green-50 rounded-lg">
-    <div class="text-3xl mb-3">🏗️</div>
-    <h3 class="text-lg font-semibold mb-2">Modern Architecture</h3>
-    <p class="text-sm">Real-time, interactive experiences with scalable infrastructure</p>
-  </div>
-  
-  <div class="p-6 bg-purple-50 rounded-lg">
-    <div class="text-3xl mb-3">⚡</div>
-    <h3 class="text-lg font-semibold mb-2">Individual Productivity</h3>
-    <p class="text-sm">AI collaboration revolutionizing software development</p>
-  </div>
-  
-  <div class="p-6 bg-orange-50 rounded-lg">
-    <div class="text-3xl mb-3">🌍</div>
-    <h3 class="text-lg font-semibold mb-2">Open Innovation</h3>
-    <p class="text-sm">Accelerating technological advancement through collaboration</p>
-  </div>
+<div class="text-3xl mt-12 font-bold">
+  Q & A
 </div>
 
-## Discussion Questions
-
-<div class="mt-12 space-y-4 text-left max-w-4xl mx-auto">
-  <div class="p-4 bg-gray-50 rounded-lg">
-    <p class="font-medium">🤔 How do you see AI agents changing your field of work?</p>
-  </div>
-  
-  <div class="p-4 bg-gray-50 rounded-lg">
-    <p class="font-medium">📄 What documents would you like to see converted to modern formats?</p>
-  </div>
-  
-  <div class="p-4 bg-gray-50 rounded-lg">
-    <p class="font-medium">🎨 How can we ensure AI enhances rather than replaces human creativity?</p>
-  </div>
+<div class="abs-bl m-15 flex flex-col items-start gap-2">
+    <img src="../images/wechat.png" class="w-60 rounded-lg" alt="WeChat QR Code" />
+    <a href="https://shanningzhuang.github.io/" target="_blank" class="flex items-center gap-2 text-3xl !border-none !hover:text-white opacity-80">
+        <carbon-user-avatar-filled-alt />
+        shanningzhuang.github.io
+    </a>
 </div>
 
-## Resources
-
-<div class="mt-8 flex justify-center space-x-8">
-  <a href="https://pdf2markdown.tech:24680/" class="text-blue-600 hover:text-blue-800">🚀 Live Demo</a>
-  <span class="text-gray-400">•</span>
-  <span class="text-gray-600">📚 Source Code</span>
-  <span class="text-gray-400">•</span>
-  <span class="text-gray-600">📖 Documentation</span>
+<div class="abs-br m-6 flex gap-4">
+  <a href="https://pdf2markdown.tech:24680/" target="_blank" alt="Live Demo"
+    class="text-xl slidev-icon-btn opacity-80 !border-none !hover:text-white">
+    🚀 Live Demo
+  </a>
+  <a href="https://github.com/ShanningZhuang/PDFToMarkdownLLM.git" target="_blank" alt="Source Code"
+    class="text-xl slidev-icon-btn opacity-80 !border-none !hover:text-white">
+    <carbon-logo-github /> Source Code
+  </a>
+  <a href="https://www.pdf2markdown.tech:24680/report/" target="_blank" alt="Presentation"
+    class="text-xl slidev-icon-btn opacity-80 !border-none !hover:text-white">
+    <carbon-presentation-file /> Presentation
+  </a>
 </div> 

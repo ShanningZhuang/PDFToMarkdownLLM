@@ -1,32 +1,21 @@
 ---
 layout: center
-class: text-center slide-overflow
+class: text-center
 ---
-
-# 🖱️ Cursor IDE Poll
-
-<div class="text-6xl mb-8">🙋‍♀️🙋‍♂️</div>
+   
+# Quick Poll: `Cursor` IDE
 
 <div class="text-3xl mb-8 font-bold">
-  How many of you are currently using <br>
-  <span class="text-blue-600">Cursor IDE</span>?
+  Used it? Heard of it?
 </div>
 
-<div class="grid grid-cols-3 gap-8 mt-12">
-  <div class="p-6 border-2 border-green-400 rounded-lg">
-    <div class="text-4xl mb-2">✋</div>
-    <div class="text-xl font-semibold">Using it</div>
-  </div>
-  
-  <div class="p-6 border-2 border-yellow-400 rounded-lg">
-    <div class="text-4xl mb-2">🤔</div>
-    <div class="text-xl font-semibold">Heard of it</div>
-  </div>
-  
-  <div class="p-6 border-2 border-gray-400 rounded-lg">
-    <div class="text-4xl mb-2">❓</div>
-    <div class="text-xl font-semibold">What's that?</div>
-  </div>
+<div class="text-2xl mb-8">
+  (Show of hands!)
+</div>
+
+<div class="grid grid-cols-2 gap-8 mt-12 items-center">
+  <img src="../images/cursor_icon.png" class="h-48 mx-auto" />
+  <img src="../images/cursor.png" class="h-48 mx-auto" />
 </div>
 
 <div class="mt-8 text-lg text-gray-600">

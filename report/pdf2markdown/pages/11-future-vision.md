@@ -2,66 +2,30 @@
 layout: default
 ---
 
-# 🚀 Future Vision & Roadmap
+# Future Work
 
-## Immediate Enhancements (3-6 months)
-
-<div class="grid grid-cols-2 gap-6">
-  <div class="p-4 border-l-4 border-blue-500 bg-blue-50">
-    <h3 class="text-lg font-semibold mb-3">📄 Multi-format Support</h3>
-    <ul class="text-sm space-y-2">
-      <li>• Word documents & PowerPoint</li>
-      <li>• HTML to Markdown conversion</li>
-      <li>• Batch processing capabilities</li>
-    </ul>
+<div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+  <div class="p-6 bg-blue-50 rounded-lg text-center">
+    <div class="text-4xl mb-4">📄</div>
+    <h3 class="text-xl font-semibold mb-2">More Formats</h3>
+    <p class="text-gray-600">Word, PPT, etc.</p>
   </div>
-
-  <div class="p-4 border-l-4 border-green-500 bg-green-50">
-    <h3 class="text-lg font-semibold mb-3">🤖 Advanced AI Features</h3>
-    <ul class="text-sm space-y-2">
-      <li>• Document summarization</li>
-      <li>• Auto table of contents generation</li>
-      <li>• Citation extraction & formatting</li>
-    </ul>
+  
+  <div class="p-6 bg-green-50 rounded-lg text-center">
+    <div class="text-4xl mb-4">🧠</div>
+    <h3 class="text-xl font-semibold mb-2">Knowledge Base</h3>
+    <p class="text-gray-600">RAG & Q&A</p>
+  </div>
+  
+  <div class="p-6 bg-purple-50 rounded-lg text-center">
+    <div class="text-4xl mb-4">🎨</div>
+    <h3 class="text-xl font-semibold mb-2">Multimodality</h3>
+    <p class="text-gray-600">Images, Audio, Video</p>
   </div>
 </div>
 
-## Medium-term Goals (6-12 months)
-
-<div class="mt-6 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-  <h3 class="text-xl font-semibold mb-4">📚 PDF Documentation Database</h3>
-  <div class="grid grid-cols-2 gap-6">
-    <ul class="space-y-2">
-      <li>• Searchable corpus of converted documents</li>
-      <li>• Semantic search using vector embeddings</li>
-    </ul>
-    <ul class="space-y-2">
-      <li>• Knowledge graph construction</li>
-      <li>• ArXiv integration & processing</li>
-    </ul>
-  </div>
-</div>
-
-## Long-term Vision (1-2 years)
-
-<div class="mt-6 grid grid-cols-2 gap-6">
-  <div class="p-6 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg">
-    <h3 class="text-lg font-semibold mb-3">🎯 Multi-modal AI Agent</h3>
-    <ul class="text-sm space-y-2">
-      <li>• Image & diagram extraction</li>
-      <li>• Chart/graph to data conversion</li>
-      <li>• Audio transcription integration</li>
-      <li>• Video content processing</li>
-    </ul>
-  </div>
-
-  <div class="p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg">
-    <h3 class="text-lg font-semibold mb-3">🏢 Enterprise Solutions</h3>
-    <ul class="text-sm space-y-2">
-      <li>• API-first architecture</li>
-      <li>• Custom model training</li>
-      <li>• Workflow automation</li>
-      <li>• Enterprise integration</li>
-    </ul>
-  </div>
+<div class="mt-12 text-center p-4 bg-gray-100 rounded-lg">
+  <p class="text-2xl font-medium">
+    Core Idea: Expand the Agent's capabilities to perform a wider variety of tasks.
+  </p>
 </div>

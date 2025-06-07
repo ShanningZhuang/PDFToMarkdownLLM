@@ -1,50 +1,26 @@
 ---
 layout: default
-class: slide-overflow
 ---
 
-# 🌍 Real-World Use Cases
+# The Goal: A Better Converter
 
-<div class="grid grid-cols-2 gap-6 mt-8">
-  <div class="p-6 border-l-4 border-blue-500 bg-blue-50">
-    <h3 class="text-xl font-semibold mb-3">🔬 Research & Academia</h3>
-    <ul class="space-y-2 text-sm">
-      <li>• Converting papers for digital note-taking</li>
-      <li>• Citation extraction and management</li>
-      <li>• Building searchable research databases</li>
-    </ul>
+<div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+  <div class="p-6 bg-blue-50 rounded-lg">
+    <div class="text-4xl mb-4">🔬</div>
+    <h3 class="text-xl font-semibold">Academic Papers</h3>
   </div>
-
-  <div class="p-6 border-l-4 border-green-500 bg-green-50">
-    <h3 class="text-xl font-semibold mb-3">📚 Documentation</h3>
-    <ul class="space-y-2 text-sm">
-      <li>• Modernizing legacy PDF manuals</li>
-      <li>• Creating version-controlled docs</li>
-      <li>• Enabling collaborative editing</li>
-    </ul>
+  <div class="p-6 bg-green-50 rounded-lg">
+    <div class="text-4xl mb-4">💼</div>
+    <h3 class="text-xl font-semibold">Work Documents</h3>
   </div>
-
-  <div class="p-6 border-l-4 border-purple-500 bg-purple-50">
-    <h3 class="text-xl font-semibold mb-3">✍️ Content Creation</h3>
-    <ul class="space-y-2 text-sm">
-      <li>• Repurposing PDF content for blogs</li>
-      <li>• Creating website content</li>
-      <li>• Social media content extraction</li>
-    </ul>
-  </div>
-
-  <div class="p-6 border-l-4 border-orange-500 bg-orange-50">
-    <h3 class="text-xl font-semibold mb-3">♿ Accessibility</h3>
-    <ul class="space-y-2 text-sm">
-      <li>• Screen reader compatibility</li>
-      <li>• Mobile-friendly content</li>
-      <li>• Responsive design support</li>
-    </ul>
+  <div class="p-6 bg-purple-50 rounded-lg">
+    <div class="text-4xl mb-4">📚</div>
+    <h3 class="text-xl font-semibold">Legacy Archives</h3>
   </div>
 </div>
 
-<div class="mt-8 text-center p-4 bg-gray-100 rounded-lg">
-  <p class="text-lg font-medium">
-    🎯 <strong>Goal:</strong> Bridge the gap between legacy PDF content and modern digital workflows
+<div class="mt-12 text-center p-4 bg-gray-100 rounded-lg">
+  <p class="text-2xl font-medium">
+    Core Goal: Make PDF content machine-readable.
   </p>
 </div> 

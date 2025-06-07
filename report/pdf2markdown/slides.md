@@ -27,6 +27,8 @@ mdc: true
 #  ogImage: https://cover.sli.dev
 # aspectRatio: 16/16
 # canvasWidth: 980
+addons:
+  - slidev-addon-qrcode
 defaults:
   class: slide-overflow
   scrollable: true
@@ -73,12 +75,13 @@ src: ./pages/10-deployment.md
 src: ./pages/11-future-vision.md
 ---
 
+
 ---
-src: ./pages/12-ai-productivity.md
+src: ./pages/12-future-of-work.md
 ---
 
 ---
-src: ./pages/13-future-of-work.md
+src: ./pages/13-ai-productivity.md
 ---
 
 ---

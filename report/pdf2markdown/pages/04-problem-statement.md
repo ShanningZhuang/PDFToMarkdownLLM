@@ -1,40 +1,27 @@
 ---
 layout: default
-class: slide-overflow
 ---
 
-# 📚 Background & Problem Statement
+# The Problem: My Workflow Pain
 
-## The PDF Problem
-
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-2 gap-8 items-center">
   <div>
-    <h3 class="text-xl font-semibold mb-4">📄 Ubiquity of PDFs</h3>
-    <ul class="space-y-2">
-      <li>• Academic papers & research documents</li>
-      <li>• Legacy format that's hard to process</li>
-      <li>• Poor accessibility and mobile experience</li>
+    <ul class="text-xl space-y-4">
+      <li>• I use <strong class="text-blue-500">Cursor</strong> for assignments.</li>
+      <li>• But Cursor <strong class="text-red-500">can't read PDFs</strong>.</li>
+      <li class="pl-6">My workflow: PDF → Markdown → Cursor</li>
+      <li>• Standard converters produce <strong class="text-red-500">garbled, broken text</strong>.</li>
+      <li>• Result: Hours of painful manual cleanup.</li>
     </ul>
   </div>
-  
-  <div>
-    <h3 class="text-xl font-semibold mb-4">🔄 Current Workflow Issues</h3>
-    <ul class="space-y-2">
-      <li>• Manual copy-paste creates formatting mess</li>
-      <li>• Time-consuming cleanup process</li>
-      <li>• Inconsistent results across tools</li>
-    </ul>
+  <div class="space-y-4">
+    <div class="flex items-center justify-center">
+      <img src="../images/pdf_icon.png" class="h-24" />
+      <span class="text-6xl mx-4 text-red-500 font-bold">❌</span>
+      <img src="../images/cursor_icon.png" class="h-24" />
+    </div>
+    <p class="text-center text-gray-600">Cursor can't read PDFs directly</p>
+    <img src="../images/traditional_conversion.png" class="mt-8 rounded-lg shadow-lg" />
+    <p class="text-center text-gray-600">Traditional converters are ineffective</p>
   </div>
-</div>
-
-## Why PDF to Markdown Matters
-
-<div class="mt-6 p-4 bg-blue-50 rounded-lg">
-  <h3 class="text-lg font-semibold mb-2">🎯 Academic Research Workflow</h3>
-  <p>Researchers need to extract, cite, and reference content efficiently</p>
-</div>
-
-<div class="mt-4 p-4 bg-green-50 rounded-lg">
-  <h3 class="text-lg font-semibold mb-2">📝 Modern Content Management</h3>
-  <p>Markdown is the universal language of modern documentation, version control, and collaboration</p>
 </div> 
